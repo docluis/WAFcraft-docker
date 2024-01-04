@@ -50,7 +50,7 @@ COPY modsecurity-cli /app/modsecurity-cli
 COPY coreruleset /app/modsecurity-cli/coreruleset
 
 # Copy tests
-COPY tests /app/tests
+# COPY tests /app/tests
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
