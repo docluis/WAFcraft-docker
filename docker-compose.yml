@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  myapp:
+  wafcraft:
     build: .
     working_dir: /app
     volumes:

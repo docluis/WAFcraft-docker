@@ -15,7 +15,7 @@ tar -xzf modsecurity-v3.0.10.tar.gz
 cd pymodsecurity
 gh pr checkout 21
 # 5. Build the container and Attach!
-docker-compose build; docker-compose run myapp bash
+docker-compose build; docker-compose run wafcraft bash
 ```
 ### Simple Test
 ```bash
