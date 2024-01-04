@@ -14,7 +14,7 @@ tar -xzf modsecurity-v3.0.10.tar.gz
 # 4. Checkout the pymodsecurity PR for ModSecurity 3.0.10 compatibility
 cd pymodsecurity
 gh pr checkout 21
-# 4. Build the container and Attach!
+# 5. Build the container and Attach!
 docker-compose build; docker-compose run myapp bash
 ```
 ### Simple Test
