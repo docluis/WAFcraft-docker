@@ -4,4 +4,4 @@ services:
     build: .
     working_dir: /app
     volumes:
-      - ./tests:/app/tests
+      - ./ml-modsec:/app/ml-modsec

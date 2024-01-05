@@ -49,8 +49,8 @@ COPY modsecurity-cli /app/modsecurity-cli
 # Copy coreruleset into modsecurity-cli
 COPY coreruleset /app/modsecurity-cli/coreruleset
 
-# Copy tests
-# COPY tests /app/tests
+# Copy ml-modsec
+COPY ml-modsec /app/ml-modsec
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

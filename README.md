@@ -19,7 +19,7 @@ docker-compose build; docker-compose run wafcraft bash
 ```
 ### Simple Test
 ```bash
-# 5. Test
 cd modsecurity-cli
-python3 main.py "<script>alert(1)</script>" --verbose
+python3 main.py --verbose "' or 1=1 -- -"
+python3 main.py --verbose --rules /app/ml-modsec/rules "' or 1=1 -- -"
 ```
