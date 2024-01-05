@@ -17,9 +17,15 @@ gh pr checkout 21
 # 5. Build the container and Attach!
 docker-compose build; docker-compose run wafcraft bash
 ```
-### Simple Test
+### Simple Test modsecurity-cli
 ```bash
 cd modsecurity-cli
-python3 main.py --verbose "' or 1=1 -- -"
-python3 main.py --verbose --rules /app/ml-modsec/rules "' or 1=1 -- -"
+python main.py --verbose "' or 1=1 -- -"
+python main.py --verbose --rules /app/ml-modsec/rules "' or 1=1 -- -"
+```
+
+### Simple Test ml-modsec
+```bash
+cd ml-modsec
+python payload_to_array.py
 ```

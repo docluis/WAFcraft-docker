@@ -6,6 +6,8 @@ rules_path = "/app/ml-modsec/rules"
 
 
 def get_rules_list():
+    # TODO: maybe do this statically, once ?
+
     # read rules from each file in the rules directory
     for rule_path in sorted(glob.glob(f"{rules_path}/*.conf")):
         with open(rule_path, "r") as rule_file:
@@ -27,7 +29,7 @@ def payload_to_array(payload, rule_ids):
     output = stream.read()
 
     # parse IDs from output (in format -  942432)
-    matches = re.findall(r"[+/-]\s+(\d+)", output)
+    matches = re.findall(r"\s+(\d+)", output)
     rule_array = [1 if rule_id in set(matches) else 0 for rule_id in rule_ids]
 
     return rule_array
