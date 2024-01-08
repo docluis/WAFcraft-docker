@@ -34,7 +34,7 @@ RUN cd /app/modsecurity-v3.0.10 && \
 ENV LD_LIBRARY_PATH /usr/local/modsecurity/lib:${LD_LIBRARY_PATH}
 
 # Install the necessary Python packages
-RUN pip install pybind11 typer
+RUN pip install pybind11 typer sqlparse
 
 # Copy only the necessary files for pymodsecurity installation
 COPY pymodsecurity /app/pymodsecurity
@@ -48,6 +48,9 @@ COPY modsecurity-cli /app/modsecurity-cli
 
 # Copy coreruleset into modsecurity-cli
 COPY coreruleset /app/modsecurity-cli/coreruleset
+
+# Copy wafamole_dataset
+COPY wafamole_dataset /app/wafamole_dataset
 
 # Copy ml-modsec
 COPY ml-modsec /app/ml-modsec
