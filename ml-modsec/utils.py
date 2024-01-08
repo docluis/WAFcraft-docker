@@ -1,18 +1,19 @@
 import base64
 import re
-import os
 import sqlparse
 import glob
-import shlex
-import subprocess
+import pandas as pd
+
+from modsec import get_activated_rules, init_modsec
+from sklearn.model_selection import train_test_split
 
 rules_path = "/app/ml-modsec/rules"
-wafamole_dataset_path = "/app/wafamole_dataset"
+# TODO: handle large files
+attack_data_path = "data/attacks_5k.sql"
+sane_data_path = "data/sanes_5k.sql"
 
 
 def get_rules_list():
-    # TODO: maybe do this statically, once ?
-
     # read rules from each file in the rules directory
     for rule_path in sorted(glob.glob(f"{rules_path}/*.conf")):
         with open(rule_path, "r") as rule_file:
@@ -22,79 +23,71 @@ def get_rules_list():
     return sorted(set(matches))
 
 
-def payload_to_vec(payload, rule_ids):
-    # TODO: optimize, main.py can handle multiple payloads at once
-    # alternatively, create your own Transaction processor or
-    # create PR to modsecurity-cli, maybe not necessary
-
-    # escape payload
-    payload = shlex.quote(payload)
-    # run modsecurity-cli/main.py with the payload
-    full_command = (
-        f"python ../modsecurity-cli/main.py --verbose --rules {rules_path} {payload}"
-    )
-
-    process = subprocess.Popen(
-        full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
-    output, error = process.communicate()
-    # parse IDs from output (in format -  942432)
-    matches = re.findall(r"\s+(\d+)", output.decode("utf-8"))
-    rule_array = [1 if rule_id in set(matches) else 0 for rule_id in rule_ids]
+def payload_to_vec(payload, rule_ids, modsec):
+    matches = get_activated_rules([payload], modsec=modsec)
+    rule_array = [1 if int(rule_id) in set(matches) else 0 for rule_id in rule_ids]
 
     return rule_array
 
 
-def generate_dataset(size=1000):
+def create_train_test_split(attack_file, sane_file, train_size, test_size, modsec):
+    def read_and_parse(file_path):
+        content = open(file_path, "r").read()
+        statements = sqlparse.split(content) # TODO: slow for large files
+
+        parsed_data = []
+        for statement in statements:
+            base64_statement = base64.b64encode(statement.encode("utf-8")).decode(
+                "utf-8"
+            )
+            parsed_data.append({"data": base64_statement})
+
+        return pd.DataFrame(parsed_data)
+
+    def add_payload_to_vec(data, rule_ids, modsec):
+        data["vector"] = data["data"].apply(
+            lambda x: payload_to_vec(x, rule_ids, modsec)
+        )
+        return data
+
     rule_ids = get_rules_list()
-
-    if not os.path.exists("data/attacks.csv"):
-        os.makedirs("data")
-        full_command = f"cat {wafamole_dataset_path}/attacks.sql.* > data/attacks.csv"
-        process = subprocess.Popen(
-            full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        output, error = process.communicate()
-        print("attacks.csv created")
-
-    if not os.path.exists("data/sanes.csv"):
-        full_command = f"cat {wafamole_dataset_path}/sane.sql.* > data/sanes.csv"
-        process = subprocess.Popen(
-            full_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        output, error = process.communicate()
-        print("sanes.csv created")
-
-    with open("data/attacks.csv", "r") as attacks_file:
-        lim = int(size / 2) + 1
-        # only sample size lines
-        attacks_b = attacks_file.readlines()[:lim] # TODO: sample random ones maybe?
-        attacks = sqlparse.split("".join(attacks_b))
-        for attack in attacks:
-            vec = payload_to_vec(attack, rule_ids)
-            base64_attack = base64.b64encode(attack.encode("utf-8")).decode("utf-8")
-            # write to file
-            with open("train_dataset.csv", "a") as train_dataset_file:
-                train_dataset_file.write(f"{base64_attack},{vec},1\n")
     
-    with open("data/sanes.csv", "r") as sanes_file:
-        lim = int(size / 2) + 1
-        # only sample size lines
-        sanes_b = sanes_file.readlines()[:lim] # TODO: sample random ones maybe?
-        sanes = sqlparse.split("".join(sanes_b))
-        for sane in sanes:
-            vec = payload_to_vec(sane, rule_ids)
-            base64_sane = base64.b64encode(sane.encode("utf-8")).decode("utf-8")
-            # write to file
-            with open("train_dataset.csv", "a") as train_dataset_file:
-                train_dataset_file.write(f"{base64_sane},{vec},0\n")
+    print("Reading and parsing attacks data...")
+    attacks = read_and_parse(attack_file)
+    attacks["label"] = "attack"
+
+    print("Reading and parsing sanes data...")
+    sanes = read_and_parse(sane_file)
+    sanes["label"] = "sane"
+
+    # Concatenate and shuffle
+    full_data = pd.concat([attacks, sanes]).sample(frac=1).reset_index(drop=True)
+
+    print("Splitting into train and test...")
+    train, test = train_test_split(
+        full_data,
+        train_size=train_size,
+        test_size=test_size,
+        stratify=full_data["label"],
+    )
+
+    # Add vector for payloads in train and test
+    print("Adding train vectors...")
+    train = add_payload_to_vec(train, rule_ids, modsec)
+    print("Adding test vectors...")
+    test = add_payload_to_vec(test, rule_ids, modsec)
+
+    return train, test
 
 
-# testing
-# rule_ids = get_rules_list()
-# payload = "' or 1=1 -- -"
-# payload = shlex.quote("SELECT `col2` FROM `tab` WHERE `col1` LIKE '%'f'%';")
-
-# print(payload_to_vec(payload, rule_ids))
-
-generate_dataset(10)
+# example usage
+modsec = init_modsec()
+train, test = create_train_test_split(
+    attack_file=attack_data_path,
+    sane_file=sane_data_path,
+    train_size=5,
+    test_size=5,
+    modsec=modsec,
+)
+train.to_csv("train_dataset.csv", index=False)
+test.to_csv("test_dataset.csv", index=False)

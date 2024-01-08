@@ -34,7 +34,7 @@ RUN cd /app/modsecurity-v3.0.10 && \
 ENV LD_LIBRARY_PATH /usr/local/modsecurity/lib:${LD_LIBRARY_PATH}
 
 # Install the necessary Python packages
-RUN pip install pybind11 typer sqlparse
+RUN pip install pybind11 typer sqlparse pandas scikit-learn
 
 # Copy only the necessary files for pymodsecurity installation
 COPY pymodsecurity /app/pymodsecurity
@@ -54,6 +54,10 @@ COPY wafamole_dataset /app/wafamole_dataset
 
 # Copy ml-modsec
 COPY ml-modsec /app/ml-modsec
+
+# Run the generate_raw_data.sh script
+RUN cd /app/ml-modsec && \
+    ./generate_raw_data.sh
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

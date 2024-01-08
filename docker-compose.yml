@@ -3,5 +3,5 @@ services:
   wafcraft:
     build: .
     working_dir: /app
-    volumes:
-      - ./ml-modsec:/app/ml-modsec
+    # volumes:
+    #   - ./ml-modsec:/app/ml-modsec

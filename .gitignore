@@ -1,3 +1,6 @@
 placeholder
 modsecurity-v3.0.10
 modsecurity-v3.0.10.tar.gz
+ml-modsec/train_dataset.csv
+ml-modsec/test_dataset.csv
+ml-modsec/data
