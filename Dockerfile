@@ -34,7 +34,7 @@ RUN cd /app/modsecurity-v3.0.10 && \
 ENV LD_LIBRARY_PATH /usr/local/modsecurity/lib:${LD_LIBRARY_PATH}
 
 # Install the necessary Python packages
-RUN pip install pybind11 typer sqlparse pandas scikit-learn
+RUN pip install pybind11 typer sqlparse pandas scikit-learn notebook
 
 # Copy only the necessary files for pymodsecurity installation
 COPY pymodsecurity /app/pymodsecurity
@@ -55,12 +55,12 @@ COPY wafamole_dataset /app/wafamole_dataset
 # Copy ml-modsec
 COPY ml-modsec /app/ml-modsec
 
-# Run the generate_raw_data.sh script
-RUN cd /app/ml-modsec && \
-    ./generate_raw_data.sh
+# Expose port 8888 for Jupyter Notebook
+EXPOSE 8888
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set the default command for the container
-CMD ["bash"]
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]

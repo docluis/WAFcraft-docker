@@ -62,7 +62,7 @@ def get_activated_rules(
     base_uri: str = "http://www.modsecurity.org/test",
     method: str = "",
     headers: Optional[List[str]] = [],
-    paranoia_level: int = 1,
+    paranoia_level: int = 1, # TODO: add support for paranoia level
     configs: Optional[List[str]] = [
         "/app/modsecurity-cli/conf/modsecurity.conf",
         "/app/modsecurity-cli/conf/crs-setup.conf",

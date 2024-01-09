@@ -16,7 +16,7 @@ tar -xzf modsecurity-v3.0.10.tar.gz
 cd pymodsecurity
 gh pr checkout 21
 # 5. Build the container and Attach!
-docker-compose build; docker-compose run wafcraft bash
+docker-compose build; docker-compose up -d; docker-compose exec wafcraft bash
 ```
 ### Simple Test modsecurity-cli
 ```bash
@@ -27,6 +27,8 @@ python main.py --verbose --rules /app/ml-modsec/rules "' or 1=1 -- -"
 
 ### Simple Test ml-modsec
 ```bash
-cd ml-modsec
-python payload_to_array.py
+# To test the Jupyter Notebook from VS Code
+# add the following Jupyter Server:
+# http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT
+# then run the notebook!
 ```
