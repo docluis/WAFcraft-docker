@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   wafcraft:
     build: .
@@ -7,3 +7,11 @@ services:
       - ./ml-modsec:/app/ml-modsec
     ports:
       - "8888:8888" # HostPort:ContainerPort
+    deploy:
+      resources:
+        limits:
+          cpus: "8.0" # Limit to 8 cores
+          memory: 12000M # Limit to 12 GB RAM
+        reservations:
+          cpus: "0.5" # Reserve 0.5 cores
+          memory: 200M # Reserve 200 MB RAM

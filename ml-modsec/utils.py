@@ -1,6 +1,8 @@
 import base64
 import re
 
+import numpy as np
+
 import sqlparse
 import glob
 import pandas as pd
@@ -26,9 +28,9 @@ def get_rules_list():
 
 def payload_to_vec(payload_base64, rule_ids, modsec):
     matches = get_activated_rules([payload_base64], modsec=modsec)
+    # rule_array as numpy array of 0s and 1s
     rule_array = [1 if int(rule_id) in set(matches) else 0 for rule_id in rule_ids]
-
-    return rule_array
+    return np.array(rule_array)
 
 
 def create_train_test_split(
@@ -102,3 +104,20 @@ def predict_payload(payload_base64, model, modsec, rule_ids):
     confidence = probs[attack_index]
     return confidence
 
+def predict_vec(vec, model, modsec, rule_ids):
+    """
+    Returns the probability of a payload being an attack
+
+    Parameters:
+        vec (numpy.ndarray): Vectorized payload
+        model (sklearn.ensemble.RandomForestClassifier): Trained model
+        modsec (modsecurity.ModSecurity): ModSecurity instance
+        rule_ids (list): List of rule IDs
+
+    Returns:
+        float: Probability of payload being an attack
+    """
+    probs = model.predict_proba([vec])[0]
+    attack_index = list(model.classes_).index('attack')
+    confidence = probs[attack_index]
+    return confidence
