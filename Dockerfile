@@ -63,6 +63,9 @@ COPY coreruleset /app/modsecurity-cli/coreruleset
 # Copy wafamole_dataset
 COPY wafamole_dataset /app/wafamole_dataset
 
+# Copy httpParamsDataset
+COPY httpParamsDataset /app/httpParamsDataset
+
 # Copy ml-modsec
 COPY ml-modsec /app/ml-modsec
 
