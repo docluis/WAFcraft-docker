@@ -16,14 +16,16 @@ rules_path = "/app/ml-modsec/rules"
 
 def get_rules_list():
     # read rules from each file in the rules directory
-    matches = []
+    all_rules = []
     # check if rules exist
     for rule_path in sorted(glob.glob(f"{rules_path}/*.conf")):
         with open(rule_path, "r") as rule_file:
             rules = rule_file.read()
             matches = re.findall(r"id:(\d+),", rules)
+            # append matches to rules list
+            all_rules.extend(matches)
     # return sorted list of unique rule IDs
-    return sorted(set(matches))
+    return sorted(set(all_rules))
 
 
 def payload_to_vec(payload_base64, rule_ids, modsec):
