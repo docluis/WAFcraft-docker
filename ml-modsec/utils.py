@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_curve
 from sklearn.preprocessing import LabelEncoder
 
-from wafamole.models import Model
+from wafamole.models import Model  # type: ignore
 
 rules_path = "/app/ml-modsec/rules"
 
