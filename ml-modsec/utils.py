@@ -120,6 +120,20 @@ def create_train_test_split(
 
 
 def create_model(train, test, model, desired_fpr, modsec, rule_ids):
+    """
+    Returns a trained model and the threshold for the desired FPR
+
+    Parameters:
+        train (pd.DataFrame): Train dataframe
+        test (pd.DataFrame): Test dataframe
+        model (sklearn.ensemble.RandomForestClassifier): Model to train
+        desired_fpr (float): Desired false positive rate
+        modsec (modsecurity.ModSecurity): ModSecurity instance
+        rule_ids (list): List of rule IDs
+
+    Returns:
+        wafamole.models.Model, float: Trained model and threshold for the desired FPR
+    """
     threshold = 0.5
     # Extract features and labels
     X_train, y_train = list(train["vector"]), train["label"]
@@ -147,8 +161,13 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids):
 
         print(f"Adjusted threshold: {threshold}")
         # make sure classification report has attack and sane in the right order
-        print(classification_report(binary_y_test, adjusted_predictions, target_names=label_encoder.classes_))
+        print(
+            classification_report(
+                binary_y_test, adjusted_predictions, target_names=label_encoder.classes_
+            )
+        )
         # print(classification_report(binary_y_test, adjusted_predictions))
+
     class WAFamoleModel(Model):
         def extract_features(self, value: str):
             payload_base64 = base64.b64encode(value.encode("utf-8")).decode("utf-8")
@@ -162,8 +181,9 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids):
                 vec=vec,
                 model=model,
             )
+
     wafamole_model = WAFamoleModel()
-    
+
     return wafamole_model, threshold
 
 
