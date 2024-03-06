@@ -62,7 +62,7 @@ def get_activated_rules(
     base_uri: str = "http://www.modsecurity.org/test",
     method: str = "",
     headers: Optional[List[str]] = [],
-    paranoia_level: int = 1, # TODO: add support for paranoia level
+    paranoia_level: int = 1,
     configs: Optional[List[str]] = [
         "/app/modsecurity-cli/conf/modsecurity.conf",
         "/app/modsecurity-cli/conf/crs-setup.conf",
@@ -124,7 +124,8 @@ def get_activated_rules(
 
     activated_rules = []
     for rule in transaction.m_rulesMessages:
-        activated_rules.append(rule.m_ruleId)
+        if get_paranoia_level(rule) <= paranoia_level:
+            activated_rules.append(rule.m_ruleId)
 
     return activated_rules
 
