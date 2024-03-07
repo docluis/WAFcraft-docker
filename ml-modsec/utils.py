@@ -307,3 +307,24 @@ def create_adv_train_test_split(
     test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
 
     return train_adv, test_adv
+
+def test_evasion(payload, threshold, engine_eval_settings, model, engine, rule_ids, modsec, paranoia_level):
+    payload_base64 = base64.b64encode(payload.encode("utf-8")).decode("utf-8")
+    vec = payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level)
+    is_attack = model.classify(payload)
+    print(f"Payload: {payload}")
+    print(f"Vec: {vec}")
+    print(f"Confidence: {round(is_attack, 5)}")
+
+    min_confidence, min_payload = engine.evaluate(
+        payload=payload,
+        **engine_eval_settings,
+    )
+    print()
+    print(f"Min payload: {min_payload.encode('utf-8')}")
+    print(f"Min confidence: {round(min_confidence, 5)}")
+    print(
+        f"Reduced confidence from {round(is_attack, 5)} to {round(min_confidence, 5)} (reduction of {round(is_attack - min_confidence, 5)})"
+    )
+
+    print("\nEvasion successful" if min_confidence < threshold else "Evasion failed")
