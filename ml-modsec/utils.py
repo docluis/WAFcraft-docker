@@ -60,6 +60,26 @@ def payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level):
     return np.array(rule_array)
 
 
+def add_vec(data, rule_ids, modsec, paranoia_level):
+    """
+    Returns a dataframe with vectorized payloads
+
+    Parameters:
+        data (pd.DataFrame): Dataframe containing payloads
+        rule_ids (list): List of rule IDs
+        modsec (modsecurity.ModSecurity): ModSecurity instance
+        paranoia_level (int): Paranoia level
+
+    Returns:
+        pd.DataFrame: Dataframe with vectorized payloads
+    """
+    tqdm.pandas(desc="Processing payloads")
+    data["vector"] = data["data"].progress_apply(
+        lambda x: payload_to_vec(x, rule_ids, modsec, paranoia_level)
+    )
+    return data
+
+
 def create_train_test_split(
     attack_file,
     sane_file,
@@ -99,13 +119,6 @@ def create_train_test_split(
 
         return pd.DataFrame(parsed_data)
 
-    def add_payload_to_vec(data, rule_ids, modsec, paranoia_level):
-        tqdm.pandas(desc="Processing payloads")
-        data["vector"] = data["data"].progress_apply(
-            lambda x: payload_to_vec(x, rule_ids, modsec, paranoia_level)
-        )
-        return data
-
     print("Reading and parsing data...")
 
     attacks = read_and_parse(attack_file)
@@ -136,8 +149,8 @@ def create_train_test_split(
 
     # Add vector for payloads in train and test
     print("Creating vectors...")
-    train = add_payload_to_vec(train, rule_ids, modsec, paranoia_level)
-    test = add_payload_to_vec(test, rule_ids, modsec, paranoia_level)
+    train = add_vec(train, rule_ids, modsec, paranoia_level)
+    test = add_vec(test, rule_ids, modsec, paranoia_level)
 
     print("Done!")
     print(f"Train shape: {train.shape} | Test shape: {test.shape}")
@@ -234,15 +247,40 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
     return wafamole_model, threshold
 
 
-def create_adv_train_test_set(
-    train, test, train_adv_size, test_adv_size, engine, engine_settings
+def create_adv_train_test_split(
+    train,
+    test,
+    train_adv_size,
+    test_adv_size,
+    engine,
+    engine_settings,
+    modsec,
+    rule_ids,
+    paranoia_level,
 ):
-    # get train_adv_size payloads from train
-    train_adv = train.sample(n=train_adv_size).drop(columns=["vector"])
-    # get test_adv_size payloads from test
-    test_adv = test.sample(n=test_adv_size).drop(columns=["vector"])
+    """
+    Returns train and test dataframes with adversarial payloads
 
-    print("Optimizing train payloads...")
+    Parameters:
+        train (pd.DataFrame): Train dataframe
+        test (pd.DataFrame): Test dataframe
+        train_adv_size (float): Number of adversarial payloads to generate for training
+        test_adv_size (float): Number of adversarial payloads to generate for testing
+        engine (wafamole.models.Model): Model to generate adversarial payloads
+        engine_settings (dict): Settings for the model
+        modsec (modsecurity.ModSecurity): ModSecurity instance
+        rule_ids (list): List of rule IDs
+        paranoia_level (int): Paranoia level
+
+    Returns:
+        pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
+    """
+
+    # Sample train and test dataframes, only use attack payloads
+    train_adv = train[train["label"] == "attack"].sample(n=train_adv_size).drop(columns=["vector"])
+    test_adv = test[test["label"] == "attack"].sample(n=test_adv_size).drop(columns=["vector"])
+
+    print("Optimizing payloads...")
     for i, row in tqdm(train_adv.iterrows(), total=train_adv_size):
         with contextlib.redirect_stdout(f):
             min_confidence, min_payload = engine.evaluate(
@@ -253,7 +291,6 @@ def create_adv_train_test_set(
                 min_payload.encode("utf-8")
             ).decode("utf-8")
 
-    print("Optimizing test payloads...")
     for i, row in tqdm(test_adv.iterrows(), total=test_adv_size):
         with contextlib.redirect_stdout(f):
             min_confidence, min_payload = engine.evaluate(
@@ -263,5 +300,10 @@ def create_adv_train_test_set(
             test_adv.at[i, "data"] = base64.b64encode(
                 min_payload.encode("utf-8")
             ).decode("utf-8")
+
+    # Add vector for payloads in train and test
+    print("Creating vectors...")
+    train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
+    test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
 
     return train_adv, test_adv
