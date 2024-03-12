@@ -6,3 +6,4 @@ ml-modsec/test_dataset.csv
 ml-modsec/data
 ml-modsec/__pycache__
 ml-modsec/.ipynb_checkpoints
+ml-modsec/log.txt
