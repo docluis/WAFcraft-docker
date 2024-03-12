@@ -3,7 +3,7 @@ modsecurity-v3.0.10
 modsecurity-v3.0.10.tar.gz
 ml-modsec/train_dataset.csv
 ml-modsec/test_dataset.csv
-ml-modsec/data/raw
+ml-modsec/data
 ml-modsec/__pycache__
 ml-modsec/.ipynb_checkpoints
 ml-modsec/log.txt
