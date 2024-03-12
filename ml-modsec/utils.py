@@ -31,7 +31,7 @@ def log(message, notify=False):
         log_file.write(f"{time}: {message}\n")
     if notify:
         os.system(
-            f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
+            f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
         )
 
 
