@@ -2,6 +2,7 @@ import base64
 import re
 import contextlib
 import io
+import os
 
 import numpy as np
 
@@ -21,6 +22,9 @@ from wafamole.models import Model  # type: ignore
 rules_path = "/app/ml-modsec/rules"
 
 f = io.StringIO()
+
+def notify(message):
+    os.system(f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null')
 
 
 # TODO: improve this function
