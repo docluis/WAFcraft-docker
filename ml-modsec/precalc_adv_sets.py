@@ -16,7 +16,7 @@ from modsec import init_modsec
 from sklearn.ensemble import RandomForestClassifier  # type: ignore
 from wafamole.evasion import EvasionEngine  # type: ignore
 
-log("Starting precalc data")
+log("Starting precalc data", True)
 rule_ids = get_rules_list()
 modsec = init_modsec()
 
