@@ -8,7 +8,7 @@ from utils import (
     create_model,
     create_adv_train_test_split,
     test_evasion,
-    log
+    log,
 )
 from modsec import init_modsec
 
@@ -45,8 +45,8 @@ paranoia_level = 4
 # # load the train and test sets from disk
 train = pd.read_csv("data/train_10k.csv")
 test = pd.read_csv("data/test_2k.csv")
-train['vector'] = train['vector'].apply(lambda x: np.fromstring(x[1:-1], sep=' '))
-test['vector'] = test['vector'].apply(lambda x: np.fromstring(x[1:-1], sep=' '))
+train["vector"] = train["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
+test["vector"] = test["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
 
 wafamole_model, threshold = create_model(
     train=train,
@@ -64,8 +64,8 @@ engine = EvasionEngine(wafamole_model)
 train_adv, test_adv = create_adv_train_test_split(
     train=train,
     test=test,
-    train_adv_size=1000, # paper uses 5000 (1/4 of total train set size)
-    test_adv_size=400, # paper uses 2000 (1/2 of total test set size)
+    train_adv_size=1000,  # paper uses 5000 (1/4 of total train set size)
+    test_adv_size=400,  # paper uses 2000 (1/2 of total test set size)
     engine=engine,
     engine_settings={
         "max_rounds": 200,

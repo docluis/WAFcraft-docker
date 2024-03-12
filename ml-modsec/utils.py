@@ -30,6 +30,7 @@ def notify(message):
         f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
     )
 
+
 def log(message, notify=False):
     print(message)
     time = pd.Timestamp.now()
@@ -304,7 +305,9 @@ def create_adv_train_test_split(
                         min_payload.encode("utf-8")
                     ).decode("utf-8")
                 except Exception as e:
-                    log(f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}")
+                    log(
+                        f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}"
+                    )
                     data_set.drop(i, inplace=True)
                     continue
 
