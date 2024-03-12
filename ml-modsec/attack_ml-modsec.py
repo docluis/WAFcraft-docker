@@ -65,8 +65,8 @@ engine = EvasionEngine(wafamole_model)
 train_adv, test_adv = create_adv_train_test_split(
     train=train,
     test=test,
-    train_adv_size=2500, # paper uses 5000 (1/4 of total train set size)
-    test_adv_size=1000, # paper uses 2000 (1/2 of total test set size)
+    train_adv_size=1000, # paper uses 5000 (1/4 of total train set size)
+    test_adv_size=400, # paper uses 2000 (1/2 of total test set size)
     engine=engine,
     engine_settings={
         "max_rounds": 200,
@@ -78,8 +78,8 @@ train_adv, test_adv = create_adv_train_test_split(
     rule_ids=rule_ids,
     paranoia_level=paranoia_level,
 )
-train_adv.to_csv("data/train_adv_500.csv", index=False)
-test_adv.to_csv("data/test_adv_200.csv", index=False)
+train_adv.to_csv("data/train_adv_1000.csv", index=False)
+test_adv.to_csv("data/test_adv_400.csv", index=False)
 notify("Adversarial train and test sets created")
 
 # # load the train_adv and test_adv sets from disk

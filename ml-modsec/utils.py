@@ -280,30 +280,31 @@ def create_adv_train_test_split(
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
 
+    def optimize(data_set, data_set_size):
+        for i, row in tqdm(data_set.iterrows(), total=data_set_size):
+            with contextlib.redirect_stdout(f):
+                try:
+                    min_confidence, min_payload = engine.evaluate(
+                        payload=base64.b64decode(row["data"]).decode("utf-8"),
+                        **engine_settings,
+                    )
+                    data_set.at[i, "data"] = base64.b64encode(
+                        min_payload.encode("utf-8")
+                    ).decode("utf-8")
+                except Exception as e:
+                    print(f"Error: {e}, dropping row {i}")
+                    notify(f"Error, dropping row {i}")
+                    data_set.drop(i, inplace=True)
+                    continue
+
     # Sample train and test dataframes, only use attack payloads
     train_adv = train[train["label"] == "attack"].sample(n=train_adv_size).drop(columns=["vector"])
     test_adv = test[test["label"] == "attack"].sample(n=test_adv_size).drop(columns=["vector"])
 
     print("Optimizing payloads...")
-    for i, row in tqdm(train_adv.iterrows(), total=train_adv_size):
-        with contextlib.redirect_stdout(f):
-            min_confidence, min_payload = engine.evaluate(
-                payload=base64.b64decode(row["data"]).decode("utf-8"),
-                **engine_settings,
-            )
-            train_adv.at[i, "data"] = base64.b64encode(
-                min_payload.encode("utf-8")
-            ).decode("utf-8")
-
-    for i, row in tqdm(test_adv.iterrows(), total=test_adv_size):
-        with contextlib.redirect_stdout(f):
-            min_confidence, min_payload = engine.evaluate(
-                payload=base64.b64decode(row["data"]).decode("utf-8"),
-                **engine_settings,
-            )
-            test_adv.at[i, "data"] = base64.b64encode(
-                min_payload.encode("utf-8")
-            ).decode("utf-8")
+    optimize(train_adv, train_adv_size)
+    optimize(test_adv, test_adv_size)
+    print(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
 
     # Add vector for payloads in train and test
     print("Creating vectors...")
