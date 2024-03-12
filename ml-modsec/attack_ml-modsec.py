@@ -6,10 +6,9 @@ from utils import (
     get_rules_list,
     create_train_test_split,
     create_model,
-    payload_to_vec,
     create_adv_train_test_split,
     test_evasion,
-    notify,
+    log
 )
 from modsec import init_modsec
 
@@ -80,7 +79,7 @@ train_adv, test_adv = create_adv_train_test_split(
 )
 train_adv.to_csv("data/train_adv_1000.csv", index=False)
 test_adv.to_csv("data/test_adv_400.csv", index=False)
-notify("Adversarial train and test sets created")
+log("Adversarial train and test sets created", True)
 
 # # load the train_adv and test_adv sets from disk
 # train_adv = pd.read_csv("data/train_adv_50.csv")

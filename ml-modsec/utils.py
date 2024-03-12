@@ -20,11 +20,23 @@ from sklearn.preprocessing import LabelEncoder
 from wafamole.models import Model  # type: ignore
 
 rules_path = "/app/ml-modsec/rules"
+log_path = "log.txt"
 
 f = io.StringIO()
 
+
 def notify(message):
-    os.system(f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null')
+    os.system(
+        f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
+    )
+
+def log(message, notify=False):
+    print(message)
+    time = pd.Timestamp.now()
+    with open(log_path, "a") as log_file:
+        log_file.write(f"{time}: {message}\n")
+    if notify:
+        notify(message)
 
 
 # TODO: improve this function
@@ -123,14 +135,14 @@ def create_train_test_split(
 
         return pd.DataFrame(parsed_data)
 
-    print("Reading and parsing data...")
+    log("Reading and parsing data...")
 
     attacks = read_and_parse(attack_file)
     attacks["label"] = "attack"
     sanes = read_and_parse(sane_file)
     sanes["label"] = "sane"
 
-    print("Splitting into train and test...")
+    log("Splitting into train and test...")
     train_attacks, test_attacks = train_test_split(
         attacks,
         train_size=train_attacks_size,
@@ -152,12 +164,12 @@ def create_train_test_split(
     test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
 
     # Add vector for payloads in train and test
-    print("Creating vectors...")
+    log("Creating vectors...")
     train = add_vec(train, rule_ids, modsec, paranoia_level)
     test = add_vec(test, rule_ids, modsec, paranoia_level)
 
-    print("Done!")
-    print(f"Train shape: {train.shape} | Test shape: {test.shape}")
+    log("Done!")
+    log(f"Train shape: {train.shape} | Test shape: {test.shape}")
     return train, test
 
 
@@ -184,12 +196,12 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
 
     # Train the model
     model.fit(X_train, y_train)
-    print("Model trained successfully!")
+    log("Model trained successfully!")
 
     # Evaluate the model
-    print("Evaluating model...")
-    print(f"Default threshold: {threshold}")
-    print(classification_report(y_test, model.predict(X_test)))
+    log("Evaluating model...")
+    log(f"Default threshold: {threshold}")
+    log(classification_report(y_test, model.predict(X_test)))
 
     if desired_fpr is not None:
         # 'attack' is considered the positive class (1) and 'sane' is the negative class (0)
@@ -202,14 +214,14 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
         threshold = thresholds[closest_idx]
         adjusted_predictions = (probabilities >= threshold).astype(int)
 
-        print(f"Adjusted threshold: {threshold}")
+        log(f"Adjusted threshold: {threshold}")
         # make sure classification report has attack and sane in the right order
-        print(
+        log(
             classification_report(
                 binary_y_test, adjusted_predictions, target_names=label_encoder.classes_
             )
         )
-        # print(classification_report(binary_y_test, adjusted_predictions))
+        # log(classification_report(binary_y_test, adjusted_predictions))
 
     def predict_vec(vec, model):
         """
@@ -292,44 +304,59 @@ def create_adv_train_test_split(
                         min_payload.encode("utf-8")
                     ).decode("utf-8")
                 except Exception as e:
-                    print(f"Error: {e}, dropping row {i}")
-                    notify(f"Error, dropping row {i}")
+                    log(f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}")
                     data_set.drop(i, inplace=True)
                     continue
 
     # Sample train and test dataframes, only use attack payloads
-    train_adv = train[train["label"] == "attack"].sample(n=train_adv_size).drop(columns=["vector"])
-    test_adv = test[test["label"] == "attack"].sample(n=test_adv_size).drop(columns=["vector"])
+    train_adv = (
+        train[train["label"] == "attack"]
+        .sample(n=train_adv_size)
+        .drop(columns=["vector"])
+    )
+    test_adv = (
+        test[test["label"] == "attack"].sample(n=test_adv_size).drop(columns=["vector"])
+    )
 
-    print("Optimizing payloads...")
+    log("Optimizing payloads...")
     optimize(train_adv, train_adv_size)
     optimize(test_adv, test_adv_size)
-    print(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
+    log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
 
     # Add vector for payloads in train and test
-    print("Creating vectors...")
+    log("Creating vectors...")
     train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
     test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
 
     return train_adv, test_adv
 
-def test_evasion(payload, threshold, engine_eval_settings, model, engine, rule_ids, modsec, paranoia_level):
+
+def test_evasion(
+    payload,
+    threshold,
+    engine_eval_settings,
+    model,
+    engine,
+    rule_ids,
+    modsec,
+    paranoia_level,
+):
     payload_base64 = base64.b64encode(payload.encode("utf-8")).decode("utf-8")
     vec = payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level)
     is_attack = model.classify(payload)
-    print(f"Payload: {payload}")
-    print(f"Vec: {vec}")
-    print(f"Confidence: {round(is_attack, 5)}")
+    log(f"Payload: {payload}")
+    log(f"Vec: {vec}")
+    log(f"Confidence: {round(is_attack, 5)}")
 
     min_confidence, min_payload = engine.evaluate(
         payload=payload,
         **engine_eval_settings,
     )
-    print()
-    print(f"Min payload: {min_payload.encode('utf-8')}")
-    print(f"Min confidence: {round(min_confidence, 5)}")
-    print(
+    log()
+    log(f"Min payload: {min_payload.encode('utf-8')}")
+    log(f"Min confidence: {round(min_confidence, 5)}")
+    log(
         f"Reduced confidence from {round(is_attack, 5)} to {round(min_confidence, 5)} (reduction of {round(is_attack - min_confidence, 5)})"
     )
 
-    print("\nEvasion successful" if min_confidence < threshold else "Evasion failed")
+    log("\nEvasion successful" if min_confidence < threshold else "Evasion failed")
