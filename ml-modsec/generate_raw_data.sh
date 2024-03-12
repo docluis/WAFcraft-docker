@@ -3,6 +3,9 @@
 cd /app/ml-modsec;
 mkdir data;
 cd data;
+mkdir raw;
+cd raw;
+
 cat /app/wafamole_dataset/attacks.sql.* > attacks_full.sql;
 cat /app/wafamole_dataset/sane.sql.* > sanes_full.sql;
 
