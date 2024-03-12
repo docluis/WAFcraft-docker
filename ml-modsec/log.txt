@@ -1,0 +1,266 @@
+2024-03-12 10:23:08.308455: Starting...
+2024-03-12 10:23:08.368321: Reading and parsing data...
+2024-03-12 10:23:12.076900: Splitting into train and test...
+2024-03-12 10:23:12.083324: Creating vectors...
+2024-03-12 10:23:39.614922: Done!
+2024-03-12 10:23:39.615239: Train shape: (2000, 3) | Test shape: (400, 3)
+2024-03-12 10:23:39.826837: Train and test sets created
+2024-03-12 10:23:40.226546: Model trained successfully!
+2024-03-12 10:23:40.226776: Evaluating model...
+2024-03-12 10:23:40.226824: Default threshold: 0.5
+2024-03-12 10:23:40.245858:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       200
+        sane       0.94      0.96      0.95       200
+
+    accuracy                           0.95       400
+   macro avg       0.95      0.95      0.95       400
+weighted avg       0.95      0.95      0.95       400
+
+2024-03-12 10:23:40.257109: Adjusted threshold: 0.99375
+2024-03-12 10:23:40.261365:               precision    recall  f1-score   support
+
+      attack       0.73      0.99      0.84       200
+        sane       0.98      0.63      0.77       200
+
+    accuracy                           0.81       400
+   macro avg       0.86      0.81      0.80       400
+weighted avg       0.86      0.81      0.80       400
+
+2024-03-12 10:23:40.271566: Optimizing payloads...
+2024-03-12 10:23:59.907254: Train_adv shape: (20, 2) | Test_adv shape: (10, 2)
+2024-03-12 10:23:59.907576: Creating vectors...
+2024-03-12 10:24:00.537331: Adversarial train and test sets created
+2024-03-12 10:24:00.950711: Model trained successfully!
+2024-03-12 10:24:00.950935: Evaluating model...
+2024-03-12 10:24:00.950984: Default threshold: 0.5
+2024-03-12 10:24:00.969676:               precision    recall  f1-score   support
+
+      attack       0.96      0.92      0.94       210
+        sane       0.92      0.96      0.94       200
+
+    accuracy                           0.94       410
+   macro avg       0.94      0.94      0.94       410
+weighted avg       0.94      0.94      0.94       410
+
+2024-03-12 10:24:00.980552: Adjusted threshold: 0.9989583333333334
+2024-03-12 10:24:00.984720:               precision    recall  f1-score   support
+
+      attack       0.73      0.99      0.84       210
+        sane       0.98      0.62      0.76       200
+
+    accuracy                           0.81       410
+   macro avg       0.86      0.81      0.80       410
+weighted avg       0.86      0.81      0.80       410
+
+2024-03-12 10:24:01.054433: Payload: SELECT SLEEP(5)#";
+2024-03-12 10:24:01.054932: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-12 10:24:01.055011: Confidence: 0.96494
+2024-03-12 10:24:40.147023: Min payload: b'sEleCT\tSleEP((sElECt\n0X5)) OR "Y1" NOT LIKE "Y1" OR False  &&  True AND True#";0\''
+2024-03-12 10:24:40.147295: Min confidence: 0.6142
+2024-03-12 10:24:40.147361: Reduced confidence from 0.96494 to 0.6142 (reduction of 0.35074)
+2024-03-12 10:24:40.147405: 
+Evasion successful
+2024-03-12 10:24:40.264021: Payload: SELECT SLEEP(5)#";
+2024-03-12 10:24:40.264434: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-12 10:24:40.264500: Confidence: 0.97769
+2024-03-12 10:25:06.793554: Starting...
+2024-03-12 10:25:06.858878: Reading and parsing data...
+2024-03-12 10:25:10.483008: Splitting into train and test...
+2024-03-12 10:25:10.489777: Creating vectors...
+2024-03-12 10:25:38.918434: Train_adv shape: (20, 2) | Test_adv shape: (10, 2)
+2024-03-12 10:25:38.918915: Creating vectors...
+2024-03-12 10:25:40.878612: Adversarial train and test sets created
+2024-03-12 10:25:41.281653: Model trained successfully!
+2024-03-12 10:25:41.281882: Evaluating model...
+2024-03-12 10:25:41.281927: Default threshold: 0.5
+2024-03-12 10:25:41.301261:               precision    recall  f1-score   support
+
+      attack       0.98      0.94      0.96       210
+        sane       0.94      0.98      0.96       200
+
+    accuracy                           0.96       410
+   macro avg       0.96      0.96      0.96       410
+weighted avg       0.96      0.96      0.96       410
+
+2024-03-12 10:25:41.312928: Adjusted threshold: 0.7593750000000001
+2024-03-12 10:25:41.317363:               precision    recall  f1-score   support
+
+      attack       0.88      0.99      0.93       210
+        sane       0.99      0.85      0.92       200
+
+    accuracy                           0.92       410
+   macro avg       0.93      0.92      0.92       410
+weighted avg       0.93      0.92      0.92       410
+
+2024-03-12 10:26:42.246665: Done!
+2024-03-12 10:26:42.246939: Train shape: (4000, 3) | Test shape: (1000, 3)
+2024-03-12 10:26:42.683701: Train and test sets created
+2024-03-12 10:26:43.157741: Model trained successfully!
+2024-03-12 10:26:43.157961: Evaluating model...
+2024-03-12 10:26:43.158007: Default threshold: 0.5
+2024-03-12 10:26:43.192661:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       500
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1000
+   macro avg       0.95      0.95      0.95      1000
+weighted avg       0.95      0.95      0.95      1000
+
+2024-03-12 10:26:43.211060: Adjusted threshold: 0.8902796285088019
+2024-03-12 10:26:43.215544:               precision    recall  f1-score   support
+
+      attack       0.82      0.99      0.90       500
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1000
+   macro avg       0.90      0.89      0.89      1000
+weighted avg       0.90      0.89      0.89      1000
+
+2024-03-12 10:26:43.225600: Optimizing payloads...
+2024-03-12 10:27:44.927017: Starting...
+2024-03-12 10:27:44.988645: Reading and parsing data...
+2024-03-12 10:28:04.866734: Starting...
+2024-03-12 10:28:05.260211: Model trained successfully!
+2024-03-12 10:28:05.260435: Evaluating model...
+2024-03-12 10:28:05.260489: Default threshold: 0.5
+2024-03-12 10:28:05.294487:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       500
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1000
+   macro avg       0.95      0.95      0.95      1000
+weighted avg       0.95      0.95      0.95      1000
+
+2024-03-12 10:28:05.312209: Adjusted threshold: 0.8902796285088019
+2024-03-12 10:28:05.316941:               precision    recall  f1-score   support
+
+      attack       0.82      0.99      0.90       500
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1000
+   macro avg       0.90      0.89      0.89      1000
+weighted avg       0.90      0.89      0.89      1000
+
+2024-03-12 10:28:05.326964: Optimizing payloads...
+2024-03-12 10:29:38.022486: Train_adv shape: (20, 2) | Test_adv shape: (10, 2)
+2024-03-12 10:29:38.022826: Creating vectors...
+2024-03-12 10:29:40.056287: Adversarial train and test sets created
+2024-03-12 10:29:40.542579: Model trained successfully!
+2024-03-12 10:29:40.542811: Evaluating model...
+2024-03-12 10:29:40.542857: Default threshold: 0.5
+2024-03-12 10:29:40.576721:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       510
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1010
+   macro avg       0.95      0.95      0.95      1010
+weighted avg       0.95      0.95      0.95      1010
+
+2024-03-12 10:29:40.594267: Adjusted threshold: 0.8755469724584779
+2024-03-12 10:29:40.598648:               precision    recall  f1-score   support
+
+      attack       0.83      0.99      0.90       510
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1010
+   macro avg       0.91      0.89      0.89      1010
+weighted avg       0.91      0.89      0.89      1010
+
+2024-03-12 10:30:55.980000: Train_adv shape: (20, 2) | Test_adv shape: (10, 2)
+2024-03-12 10:30:55.980328: Creating vectors...
+2024-03-12 10:30:57.279347: Adversarial train and test sets created
+2024-03-12 10:30:57.769434: Model trained successfully!
+2024-03-12 10:30:57.769659: Evaluating model...
+2024-03-12 10:30:57.769706: Default threshold: 0.5
+2024-03-12 10:30:57.803833:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       510
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1010
+   macro avg       0.95      0.95      0.95      1010
+weighted avg       0.95      0.95      0.95      1010
+
+2024-03-12 10:30:57.821222: Adjusted threshold: 0.8944785716303896
+2024-03-12 10:30:57.825729:               precision    recall  f1-score   support
+
+      attack       0.83      0.99      0.90       510
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1010
+   macro avg       0.91      0.89      0.89      1010
+weighted avg       0.91      0.89      0.89      1010
+
+2024-03-12 10:30:57.930859: Payload: SELECT SLEEP(5)#";
+2024-03-12 10:30:57.931221: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-12 10:30:57.931289: Confidence: 0.98438
+2024-03-12 10:31:57.934919: Min payload: b'SeLEct\xc2\xa0slEep(0X5)  aND  (seLECt 9752) In ((sELecT 9751),9752,(sElecT 9753))#";_Q+'
+2024-03-12 10:31:57.935599: Min confidence: 0.6375
+2024-03-12 10:31:57.935691: Reduced confidence from 0.98438 to 0.6375 (reduction of 0.34688)
+2024-03-12 10:31:57.935735: 
+Evasion successful
+2024-03-12 10:31:58.130104: Payload: SELECT SLEEP(5)#";
+2024-03-12 10:31:58.130482: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-12 10:31:58.130562: Confidence: 0.9625
+2024-03-12 10:32:58.131621: Min payload: b'sELecT\tSlEEP(0x5)\x0caNd/**/0X1986=(SELect\x0b0x1986) AND 1171 LIKE 0x493#";'
+2024-03-12 10:32:58.132180: Min confidence: 0.60147
+2024-03-12 10:32:58.132268: Reduced confidence from 0.9625 to 0.60147 (reduction of 0.36103)
+2024-03-12 10:32:58.132310: 
+Evasion successful
+2024-03-12 10:33:44.655786: Starting...
+2024-03-12 10:33:45.021751: Model trained successfully!
+2024-03-12 10:33:45.021974: Evaluating model...
+2024-03-12 10:33:45.022025: Default threshold: 0.5
+2024-03-12 10:33:45.056338:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       500
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1000
+   macro avg       0.95      0.95      0.95      1000
+weighted avg       0.95      0.95      0.95      1000
+
+2024-03-12 10:33:45.073854: Adjusted threshold: 0.8902796285088019
+2024-03-12 10:33:45.078364:               precision    recall  f1-score   support
+
+      attack       0.82      0.99      0.90       500
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1000
+   macro avg       0.90      0.89      0.89      1000
+weighted avg       0.90      0.89      0.89      1000
+
+2024-03-12 10:33:45.353747: Model trained successfully!
+2024-03-12 10:33:45.353964: Evaluating model...
+2024-03-12 10:33:45.354011: Default threshold: 0.5
+2024-03-12 10:33:45.388311:               precision    recall  f1-score   support
+
+      attack       0.96      0.94      0.95       510
+        sane       0.94      0.96      0.95       500
+
+    accuracy                           0.95      1010
+   macro avg       0.95      0.95      0.95      1010
+weighted avg       0.95      0.95      0.95      1010
+
+2024-03-12 10:33:45.405992: Adjusted threshold: 0.8821719942216356
+2024-03-12 10:33:45.410691:               precision    recall  f1-score   support
+
+      attack       0.83      0.99      0.90       510
+        sane       0.99      0.79      0.88       500
+
+    accuracy                           0.89      1010
+   macro avg       0.91      0.89      0.89      1010
+weighted avg       0.91      0.89      0.89      1010
+
+2024-03-12 10:33:45.438652: Payload: SELECT SLEEP(5)#";
+2024-03-12 10:33:45.439011: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-12 10:33:45.439080: Confidence: 0.98438

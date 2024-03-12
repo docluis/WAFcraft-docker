@@ -9,10 +9,9 @@ import numpy as np
 import sqlparse
 import glob
 import pandas as pd
-import concurrent.futures
 
 from tqdm import tqdm
-from modsec import get_activated_rules, init_modsec
+from modsec import get_activated_rules
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_curve
 from sklearn.preprocessing import LabelEncoder
@@ -25,19 +24,15 @@ log_path = "log.txt"
 f = io.StringIO()
 
 
-def notify(message):
-    os.system(
-        f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
-    )
-
-
 def log(message, notify=False):
     print(message)
     time = pd.Timestamp.now()
     with open(log_path, "a") as log_file:
         log_file.write(f"{time}: {message}\n")
     if notify:
-        notify(message)
+        os.system(
+            f'curl -d "{message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
+        )
 
 
 # TODO: improve this function
@@ -355,7 +350,6 @@ def test_evasion(
         payload=payload,
         **engine_eval_settings,
     )
-    log()
     log(f"Min payload: {min_payload.encode('utf-8')}")
     log(f"Min confidence: {round(min_confidence, 5)}")
     log(
