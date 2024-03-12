@@ -38,7 +38,7 @@ test_adv_size = 1000  # paper uses 2000 (1/2 of total test set size)
 
 engine_settings = {
     "max_rounds": 200,
-    "round_size": 10,
+    "round_size": 8,
     "timeout": 5,
 }
 
