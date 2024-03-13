@@ -24,7 +24,7 @@ modsec = init_modsec()
 
 attack_data_path = "data/raw/attacks_full.sql" # raw attack data
 sane_data_path = "data/raw/sanes_full.sql" # raw sane data
-processed_data_path = "data/preprocessed/3"  # path to store the preprocessed train and test data
+processed_data_path = "data/preprocessed/4"  # path to store the preprocessed train and test data
 
 paranoia_level = 4
 
@@ -33,7 +33,7 @@ train_sanes_size = 5000  # paper uses 10000
 test_attacks_size = 1000  # paper uses 2000
 test_sanes_size = 1000  # paper uses 2000
 
-train_adv_size = 2500  # paper uses 5000 (1/4 of total train set size)
+train_adv_size = 10  # paper uses 5000 (1/4 of total train set size)
 test_adv_size = 1000  # paper uses 2000 (1/2 of total test set size)
 
 engine_settings = {
