@@ -3,6 +3,7 @@ import re
 import contextlib
 import io
 import os
+import time
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +15,12 @@ import pandas as pd
 from tqdm import tqdm
 from modsec import get_activated_rules, init_modsec
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_curve, confusion_matrix, precision_recall_curve
+from sklearn.metrics import (
+    classification_report,
+    roc_curve,
+    confusion_matrix,
+    precision_recall_curve,
+)
 from sklearn.preprocessing import LabelEncoder
 
 from concurrent.futures import ProcessPoolExecutor
@@ -259,6 +265,19 @@ def train_model(train, test, model, desired_fpr):
         log(f"Adjusting threshold to match desired FPR of {desired_fpr}")
         # 'attack' is considered the positive class (1) and 'sane' is the negative class (0)
         probabilities = model.predict_proba(X_test)[:, 1]
+
+        # TODO: add precision-recall curve? (not sure if it's useful) ask Jonas
+        # precision, recall, thresholds = precision_recall_curve(y_test, probabilities)
+        # thresholds = np.append(thresholds, 1)
+        # plt.figure(figsize=(8, 6))
+        # plt.plot(recall, precision, marker='.', label='Precision-Recall Curve')
+        # plt.xlabel('Recall')
+        # plt.ylabel('Precision')
+        # plt.title('Precision-Recall Curve')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.show()
+
         fpr, tpr, thresholds = roc_curve(y_test, probabilities)  # plot ROC curve
         closest_idx = np.argmin(np.abs(fpr - desired_fpr))  # threshold closest to FPR
         threshold = thresholds[closest_idx]
@@ -333,32 +352,33 @@ def optimize(
     rule_ids,
     paranoia_level,
 ):
-    modsec = init_modsec()
-    wafamole_model = create_wafamole_model(
-        model_trained, modsec, rule_ids, paranoia_level
-    )
-    engine = EvasionEngine(wafamole_model)
-    for i, row in tqdm(data_set.iterrows(), total=data_set_size):
-        with contextlib.redirect_stdout(f):
-            try:
-                min_confidence, min_payload = engine.evaluate(
-                    payload=base64.b64decode(row["data"]).decode("utf-8"),
-                    **engine_settings,
-                )
-                data_set.at[i, "data"] = base64.b64encode(
-                    min_payload.encode("utf-8")
-                ).decode("utf-8")
-            except Exception as e:
-                log(
-                    f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}"
-                )
-                data_set.drop(i, inplace=True)
-                continue
     try:
+        modsec = init_modsec()
+        wafamole_model = create_wafamole_model(
+            model_trained, modsec, rule_ids, paranoia_level
+        )
+        engine = EvasionEngine(wafamole_model)
+        for i, row in tqdm(data_set.iterrows(), total=data_set_size):
+            with contextlib.redirect_stdout(f):
+                try:
+                    min_confidence, min_payload = engine.evaluate(
+                        payload=base64.b64decode(row["data"]).decode("utf-8"),
+                        **engine_settings,
+                    )
+                except Exception as e:
+                    log(f"Error: {e}, dropping row {i} if payload is not captured")
+                    if min_payload is None:
+                        # If no payload has been captured, drop the row
+                        data_set.drop(i, inplace=True)
+                    else:
+                        # If a payload was captured before the timeout/error, save it
+                        data_set.at[i, "data"] = base64.b64encode(
+                            min_payload.encode("utf-8")
+                        ).decode("utf-8")
+                    continue
         data_set.to_csv(f"{path}/{label}_adv.csv", mode="a", index=False, header=False)
     except Exception as e:
-        log(f"Error: {e}, could not save batch to csv")
-
+        log(f"Error: {e}, could not optimize batch")
 
 def create_adv_train_test_split(
     train,
@@ -370,7 +390,8 @@ def create_adv_train_test_split(
     modsec,
     rule_ids,
     paranoia_level,
-    batch_size=100,
+    batch_size,
+    cluster_size,
 ):
     """
     Returns train and test dataframes with adversarial payloads
@@ -390,6 +411,38 @@ def create_adv_train_test_split(
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
+
+    def optimize_parallel(batches, label):
+        batches_clusters = [
+            batches[i : i + cluster_size] for i in range(0, len(batches), cluster_size)
+        ]
+        for i, batch_cluster in enumerate(batches_clusters):
+            print(f"Processing cluster {i+1}/{len(batches_clusters)}")
+            with ProcessPoolExecutor() as executor:
+                futures = []
+                # create a copy of the model for each process
+                model_trained_copy = model_trained                
+                for batch in batch_cluster:
+                    future = executor.submit(
+                        optimize,
+                        batch,
+                        len(batch),
+                        model_trained_copy,
+                        label,
+                        path,
+                        engine_settings,
+                        rule_ids,
+                        paranoia_level,
+                    )
+                    futures.append(future)
+                for future in futures:
+                    try:
+                        future.result()
+                    except Exception as e:
+                        log(f"Error processing future: {e}")
+                        continue
+            time.sleep(2)
+
     ts = pd.Timestamp.now().strftime("%Y-%m-%d-%H-%M-%S")
     path = f"data/tmp/{ts}"
     if not os.path.exists(path):
@@ -413,44 +466,12 @@ def create_adv_train_test_split(
     log("Optimizing train payloads...")
     # for batch in train_adv_batches:
     #     optimize(batch, len(batch), model_trained, "train", path, engine_settings, rule_ids, paranoia_level)
-    with ProcessPoolExecutor() as executor:
-        futures = []
-        for batch in train_adv_batches:
-            future = executor.submit(
-                optimize,
-                batch,
-                len(batch),
-                model_trained,
-                "train",
-                path,
-                engine_settings,
-                rule_ids,
-                paranoia_level,
-            )
-            futures.append(future)
-        for future in futures:
-            future.result()
+    optimize_parallel(train_adv_batches, "train")
 
     log("Optimizing test payloads...")
     # for batch in test_adv_batches:
     #     optimize(batch, len(batch), model_trained, "test", path, engine_settings, rule_ids, paranoia_level)
-    with ProcessPoolExecutor() as executor:
-        futures = []
-        for batch in test_adv_batches:
-            future = executor.submit(
-                optimize,
-                batch,
-                len(batch),
-                model_trained,
-                "test",
-                path,
-                engine_settings,
-                rule_ids,
-                paranoia_level,
-            )
-            futures.append(future)
-        for future in futures:
-            future.result()
+    optimize_parallel(test_adv_batches, "test")
 
     # read the csv, add the data, remember it has no headers currently
     train_adv = pd.read_csv(f"{path}/train_adv.csv", names=["data", "label"])
