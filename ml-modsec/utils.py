@@ -17,7 +17,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_curve, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
 
+from concurrent.futures import ProcessPoolExecutor
+
 from wafamole.models import Model  # type: ignore
+from wafamole.evasion import EvasionEngine  # type: ignore
 
 rules_path = "/app/ml-modsec/rules"
 log_path = "log.txt"
@@ -31,9 +34,12 @@ def log(message, notify=False):
     with open(log_path, "a") as log_file:
         log_file.write(f"{time}: {message}\n")
     if notify:
-        os.system(
-            f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
-        )
+        try:
+            os.system(
+                f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
+            )
+        except Exception as e:
+            print(f"Not able to notify: {e}")
 
 
 # TODO: improve this function
@@ -170,21 +176,18 @@ def create_train_test_split(
     return train, test
 
 
-def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_level):
+def train_model(train, test, model, desired_fpr):
     """
     Returns a trained model and the threshold for the desired FPR
 
     Parameters:
         train (pd.DataFrame): Train dataframe
         test (pd.DataFrame): Test dataframe
-        model (sklearn.ensemble.RandomForestClassifier): Model to train
+        model: Model to train
         desired_fpr (float): Desired false positive rate
-        modsec (modsecurity.ModSecurity): ModSecurity instance
-        rule_ids (list): List of rule IDs
-        paranoia_level (int): Paranoia level
 
     Returns:
-        wafamole.models.Model, float: Trained model and threshold for the desired FPR
+        model: Trained Model, float: Trained model and threshold
     """
 
     def plot_cm(cm):
@@ -271,19 +274,28 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
         cm = confusion_matrix(y_test, adjusted_predictions)
         plot_cm(cm)
 
+    return model, threshold
+
+
+def create_wafamole_model(
+    model,
+    modsec,
+    rule_ids,
+    paranoia_level,
+):
+    """
+    Returns a WAFamole model
+
+    Parameters:
+        model (sklearn.ensemble.RandomForestClassifier): Trained model
+        modsec (modsecurity.ModSecurity): ModSecurity instance
+        rule_ids (list): List of rule IDs
+        paranoia_level (int): Paranoia level
+
+    Returns:
+        wafamole.models.Model: WAFamole model
+    """
     def predict_vec(vec, model):
-        """
-        Returns the probability of a payload being an attack
-
-        Parameters:
-            vec (numpy.ndarray): Vectorized payload
-            model (sklearn.ensemble.RandomForestClassifier): Trained model
-            modsec (modsecurity.ModSecurity): ModSecurity instance
-            rule_ids (list): List of rule IDs
-
-        Returns:
-            float: Probability of payload being an attack
-        """
         probs = model.predict_proba([vec])[0]
         attack_index = list(model.classes_).index(1)
         confidence = probs[attack_index]
@@ -307,8 +319,7 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
             )
 
     wafamole_model = WAFamoleModel()
-
-    return wafamole_model, threshold
+    return wafamole_model
 
 
 def create_adv_train_test_split(
@@ -316,11 +327,12 @@ def create_adv_train_test_split(
     test,
     train_adv_size,
     test_adv_size,
-    engine,
+    model_trained,
     engine_settings,
     modsec,
     rule_ids,
     paranoia_level,
+    batch_size=100,
 ):
     """
     Returns train and test dataframes with adversarial payloads
@@ -330,17 +342,18 @@ def create_adv_train_test_split(
         test (pd.DataFrame): Test dataframe
         train_adv_size (float): Number of adversarial payloads to generate for training
         test_adv_size (float): Number of adversarial payloads to generate for testing
-        engine (wafamole.models.Model): Model to generate adversarial payloads
+        model_trained (sklearn.ensemble.RandomForestClassifier): Trained model
         engine_settings (dict): Settings for the model
         modsec (modsecurity.ModSecurity): ModSecurity instance
         rule_ids (list): List of rule IDs
         paranoia_level (int): Paranoia level
+        batch_size (int): Batch size for optimization
 
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
 
-    def optimize(data_set, data_set_size):
+    def optimize(data_set, data_set_size, engine):
         for i, row in tqdm(data_set.iterrows(), total=data_set_size):
             with contextlib.redirect_stdout(f):
                 try:
@@ -366,9 +379,40 @@ def create_adv_train_test_split(
     )
     test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
 
-    log("Optimizing payloads...")
-    optimize(train_adv, train_adv_size)
-    optimize(test_adv, test_adv_size)
+    train_adv_batches = [
+        train_adv[i : i + batch_size] for i in range(0, len(train_adv), batch_size)
+    ]
+    test_adv_batches = [
+        test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
+    ]
+
+    ts = pd.Timestamp.now().strftime("%Y-%m-%d-%H-%M-%S")
+    path = f"data/tmp/{ts}"
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    log("Optimizing train payloads...")
+    for batch in train_adv_batches:
+        wafamole_model = create_wafamole_model(
+        model_trained, modsec, rule_ids, paranoia_level
+        )
+        engine = EvasionEngine(wafamole_model)
+        optimize(batch, len(batch), engine)
+        batch.to_csv(f"{path}/train_adv.csv", mode="a", index=False, header=False)
+    log("Optimizing test payloads...")
+    for batch in test_adv_batches:
+        wafamole_model = create_wafamole_model(
+        model_trained, modsec, rule_ids, paranoia_level
+        )
+        engine = EvasionEngine(wafamole_model)
+        optimize(batch, len(batch), engine)
+        batch.to_csv(f"{path}/test_adv.csv", mode="a", index=False, header=False)
+
+    # read the csv, add the data, remember it has no headers currently
+    train_adv = pd.read_csv(f"{path}/train_adv.csv", names=["data", "label"])
+    test_adv = pd.read_csv(f"{path}/test_adv.csv", names=["data", "label"])
+
     log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
 
     # Add vector for payloads in train and test
@@ -384,14 +428,15 @@ def test_evasion(
     threshold,
     engine_eval_settings,
     model,
-    engine,
     rule_ids,
     modsec,
     paranoia_level,
 ):
+    wafamole_model = create_wafamole_model(model, modsec, rule_ids, paranoia_level)
+    engine = EvasionEngine(wafamole_model)
     payload_base64 = base64.b64encode(payload.encode("utf-8")).decode("utf-8")
     vec = payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level)
-    is_attack = model.classify(payload)
+    is_attack = wafamole_model.classify(payload)
     log(f"Payload: {payload}")
     log(f"Vec: {vec}")
     log(f"Confidence: {round(is_attack, 5)}")
