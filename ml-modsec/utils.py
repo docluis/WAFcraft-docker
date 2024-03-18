@@ -12,9 +12,9 @@ import glob
 import pandas as pd
 
 from tqdm import tqdm
-from modsec import get_activated_rules
+from modsec import get_activated_rules, init_modsec
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_curve, confusion_matrix
+from sklearn.metrics import classification_report, roc_curve, confusion_matrix, precision_recall_curve
 from sklearn.preprocessing import LabelEncoder
 
 from concurrent.futures import ProcessPoolExecutor
@@ -323,6 +323,43 @@ def create_wafamole_model(
     return wafamole_model
 
 
+def optimize(
+    data_set,
+    data_set_size,
+    model_trained,
+    label,
+    path,
+    engine_settings,
+    rule_ids,
+    paranoia_level,
+):
+    modsec = init_modsec()
+    wafamole_model = create_wafamole_model(
+        model_trained, modsec, rule_ids, paranoia_level
+    )
+    engine = EvasionEngine(wafamole_model)
+    for i, row in tqdm(data_set.iterrows(), total=data_set_size):
+        with contextlib.redirect_stdout(f):
+            try:
+                min_confidence, min_payload = engine.evaluate(
+                    payload=base64.b64decode(row["data"]).decode("utf-8"),
+                    **engine_settings,
+                )
+                data_set.at[i, "data"] = base64.b64encode(
+                    min_payload.encode("utf-8")
+                ).decode("utf-8")
+            except Exception as e:
+                log(
+                    f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}"
+                )
+                data_set.drop(i, inplace=True)
+                continue
+    try:
+        data_set.to_csv(f"{path}/{label}_adv.csv", mode="a", index=False, header=False)
+    except Exception as e:
+        log(f"Error: {e}, could not save batch to csv")
+
+
 def create_adv_train_test_split(
     train,
     test,
@@ -353,24 +390,10 @@ def create_adv_train_test_split(
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
-
-    def optimize(data_set, data_set_size, engine):
-        for i, row in tqdm(data_set.iterrows(), total=data_set_size):
-            with contextlib.redirect_stdout(f):
-                try:
-                    min_confidence, min_payload = engine.evaluate(
-                        payload=base64.b64decode(row["data"]).decode("utf-8"),
-                        **engine_settings,
-                    )
-                    data_set.at[i, "data"] = base64.b64encode(
-                        min_payload.encode("utf-8")
-                    ).decode("utf-8")
-                except Exception as e:
-                    log(
-                        f"Error: {e}, dropping row {i} payload {base64.b64decode(row['data'])}"
-                    )
-                    data_set.drop(i, inplace=True)
-                    continue
+    ts = pd.Timestamp.now().strftime("%Y-%m-%d-%H-%M-%S")
+    path = f"data/tmp/{ts}"
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     # Sample train and test dataframes, only use attack payloads
     train_adv = (
@@ -387,28 +410,47 @@ def create_adv_train_test_split(
         test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
     ]
 
-    ts = pd.Timestamp.now().strftime("%Y-%m-%d-%H-%M-%S")
-    path = f"data/tmp/{ts}"
-
-    if not os.path.exists(path):
-        os.makedirs(path)
-
     log("Optimizing train payloads...")
-    for batch in train_adv_batches:
-        wafamole_model = create_wafamole_model(
-            model_trained, modsec, rule_ids, paranoia_level
-        )
-        engine = EvasionEngine(wafamole_model)
-        optimize(batch, len(batch), engine)
-        batch.to_csv(f"{path}/train_adv.csv", mode="a", index=False, header=False)
+    # for batch in train_adv_batches:
+    #     optimize(batch, len(batch), model_trained, "train", path, engine_settings, rule_ids, paranoia_level)
+    with ProcessPoolExecutor() as executor:
+        futures = []
+        for batch in train_adv_batches:
+            future = executor.submit(
+                optimize,
+                batch,
+                len(batch),
+                model_trained,
+                "train",
+                path,
+                engine_settings,
+                rule_ids,
+                paranoia_level,
+            )
+            futures.append(future)
+        for future in futures:
+            future.result()
+
     log("Optimizing test payloads...")
-    for batch in test_adv_batches:
-        wafamole_model = create_wafamole_model(
-            model_trained, modsec, rule_ids, paranoia_level
-        )
-        engine = EvasionEngine(wafamole_model)
-        optimize(batch, len(batch), engine)
-        batch.to_csv(f"{path}/test_adv.csv", mode="a", index=False, header=False)
+    # for batch in test_adv_batches:
+    #     optimize(batch, len(batch), model_trained, "test", path, engine_settings, rule_ids, paranoia_level)
+    with ProcessPoolExecutor() as executor:
+        futures = []
+        for batch in test_adv_batches:
+            future = executor.submit(
+                optimize,
+                batch,
+                len(batch),
+                model_trained,
+                "test",
+                path,
+                engine_settings,
+                rule_ids,
+                paranoia_level,
+            )
+            futures.append(future)
+        for future in futures:
+            future.result()
 
     # read the csv, add the data, remember it has no headers currently
     train_adv = pd.read_csv(f"{path}/train_adv.csv", names=["data", "label"])
