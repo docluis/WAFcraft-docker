@@ -5,7 +5,8 @@ import io
 import os
 
 import numpy as np
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 import sqlparse
 import glob
 import pandas as pd
@@ -13,7 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 from modsec import get_activated_rules
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, roc_curve
+from sklearn.metrics import classification_report, roc_curve, confusion_matrix
 from sklearn.preprocessing import LabelEncoder
 
 from wafamole.models import Model  # type: ignore
@@ -120,7 +121,7 @@ def create_train_test_split(
 
     def read_and_parse(file_path):
         content = open(file_path, "r").read()
-        statements = sqlparse.split(content)  # TODO: slow for large files
+        statements = sqlparse.split(content)
 
         parsed_data = []
         for statement in statements:
@@ -134,9 +135,9 @@ def create_train_test_split(
     log("Reading and parsing data...")
 
     attacks = read_and_parse(attack_file)
-    attacks["label"] = "attack"
+    attacks["label"] = 1
     sanes = read_and_parse(sane_file)
-    sanes["label"] = "sane"
+    sanes["label"] = 0
 
     log("Splitting into train and test...")
     train_attacks, test_attacks = train_test_split(
@@ -185,6 +186,47 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
     Returns:
         wafamole.models.Model, float: Trained model and threshold for the desired FPR
     """
+
+    def plot_cm(cm):
+        # Plot confusion matrix
+        sns.heatmap(
+            cm,
+            annot=True,
+            fmt="d",
+            xticklabels=["Sane", "Attack"],
+            yticklabels=["Sane", "Attack"],
+            cmap="Blues",
+        )
+        plt.gca().invert_yaxis()
+        plt.gca().invert_xaxis()
+        plt.ylabel("Actual")
+        plt.xlabel("Predicted")
+        plt.title("Confusion Matrix")
+        plt.show()
+
+    def plot_roc(fpr, tpr, closest_idx, desired_fpr):
+        plt.plot(fpr, tpr, label="ROC curve")
+        plt.ylabel("True Positive Rate (TPR)")
+        plt.xlabel("False Positive Rate (FPR)")
+        plt.title("ROC Curve")
+        # plot closest point to desired FPR and add label and annotation, make sure its in foreground
+        plt.scatter(
+            fpr[closest_idx],
+            tpr[closest_idx],
+            color="red",
+            label=f"Closest to FPR of {desired_fpr}",
+            zorder=5,
+        )
+        plt.annotate(
+            f"({round(fpr[closest_idx], 4)}, {round(tpr[closest_idx], 4)})",
+            (fpr[closest_idx], tpr[closest_idx]),
+            textcoords="offset points",
+            xytext=(50, 0),
+            ha="center",
+        )
+        plt.legend()
+        plt.show()
+
     threshold = 0.5
     # Extract features and labels
     X_train, y_train = list(train["vector"]), train["label"]
@@ -197,27 +239,37 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
     # Evaluate the model
     log("Evaluating model...")
     log(f"Default threshold: {threshold}")
-    log(classification_report(y_test, model.predict(X_test)))
+    # calculate FPR = FP / (FP + TN)
+    current_fpr = confusion_matrix(y_test, model.predict(X_test))[0, 1] / (
+        confusion_matrix(y_test, model.predict(X_test))[0, 1]
+        + confusion_matrix(y_test, model.predict(X_test))[1, 1]
+    )
+
+    log(f"FRP is currently at {round(current_fpr, 4)}")
+    predictions = model.predict(X_test)
+    log(classification_report(y_test, predictions))
+
+    cm = confusion_matrix(y_test, predictions)
+    plot_cm(cm)
 
     if desired_fpr is not None:
+        log(f"Adjusting threshold to match desired FPR of {desired_fpr}")
         # 'attack' is considered the positive class (1) and 'sane' is the negative class (0)
-        # Adjust the model prediction threshold based on the desired FPR
-        label_encoder = LabelEncoder()
-        binary_y_test = label_encoder.fit_transform(y_test)
         probabilities = model.predict_proba(X_test)[:, 1]
-        fpr, tpr, thresholds = roc_curve(binary_y_test, probabilities)
-        closest_idx = np.argmin(np.abs(fpr - desired_fpr))
+        fpr, tpr, thresholds = roc_curve(y_test, probabilities)  # plot ROC curve
+        closest_idx = np.argmin(np.abs(fpr - desired_fpr))  # threshold closest to FPR
         threshold = thresholds[closest_idx]
-        adjusted_predictions = (probabilities >= threshold).astype(int)
+        adjusted_predictions = (probabilities >= threshold).astype(int)  #  new preds
 
-        log(f"Adjusted threshold: {threshold}")
-        # make sure classification report has attack and sane in the right order
+        plot_roc(fpr, tpr, closest_idx, desired_fpr)
+
         log(
-            classification_report(
-                binary_y_test, adjusted_predictions, target_names=label_encoder.classes_
-            )
+            f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})"
         )
-        # log(classification_report(binary_y_test, adjusted_predictions))
+        log(classification_report(y_test, adjusted_predictions))
+
+        cm = confusion_matrix(y_test, adjusted_predictions)
+        plot_cm(cm)
 
     def predict_vec(vec, model):
         """
@@ -233,7 +285,7 @@ def create_model(train, test, model, desired_fpr, modsec, rule_ids, paranoia_lev
             float: Probability of payload being an attack
         """
         probs = model.predict_proba([vec])[0]
-        attack_index = list(model.classes_).index("attack")
+        attack_index = list(model.classes_).index(1)
         confidence = probs[attack_index]
         return confidence
 
@@ -308,13 +360,11 @@ def create_adv_train_test_split(
 
     # Sample train and test dataframes, only use attack payloads
     train_adv = (
-        train[train["label"] == "attack"]
+        train[train["label"] == 1]  # only use attack payloads
         .sample(n=train_adv_size)
         .drop(columns=["vector"])
     )
-    test_adv = (
-        test[test["label"] == "attack"].sample(n=test_adv_size).drop(columns=["vector"])
-    )
+    test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
 
     log("Optimizing payloads...")
     optimize(train_adv, train_adv_size)

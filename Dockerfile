@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libyajl-dev \
     pkgconf \
-    zlib1g-dev
+    zlib1g-dev \
+    zip
 
 # Copy only the necessary files for modsecurity installation
 COPY ./modsecurity-v3.0.10 /app/modsecurity-v3.0.10
@@ -47,7 +48,9 @@ RUN pip install pybind11 \
     sqlparse \
     networkx \
     Click \
-    tensorflow
+    tensorflow \
+    matplotlib \
+    seaborn
 
 # Copy and install pymodsecurity
 COPY pymodsecurity /app/pymodsecurity
