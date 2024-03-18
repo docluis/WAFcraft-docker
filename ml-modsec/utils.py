@@ -365,10 +365,12 @@ def optimize(
                         payload=base64.b64decode(row["data"]).decode("utf-8"),
                         **engine_settings,
                     )
+                    data_set.at[i, "data"] = base64.b64encode(
+                        min_payload.encode("utf-8")
+                    ).decode("utf-8")
                 except Exception as e:
-                    log(f"Error: {e}, dropping row {i} if payload is not captured")
                     if min_payload is None:
-                        # If no payload has been captured, drop the row
+                        log(f"Error: {e}, dropping row {i}")
                         data_set.drop(i, inplace=True)
                     else:
                         # If a payload was captured before the timeout/error, save it
@@ -379,6 +381,7 @@ def optimize(
         data_set.to_csv(f"{path}/{label}_adv.csv", mode="a", index=False, header=False)
     except Exception as e:
         log(f"Error: {e}, could not optimize batch")
+
 
 def create_adv_train_test_split(
     train,
@@ -421,7 +424,7 @@ def create_adv_train_test_split(
             with ProcessPoolExecutor() as executor:
                 futures = []
                 # create a copy of the model for each process
-                model_trained_copy = model_trained                
+                model_trained_copy = model_trained
                 for batch in batch_cluster:
                     future = executor.submit(
                         optimize,
