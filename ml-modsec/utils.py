@@ -295,6 +295,7 @@ def create_wafamole_model(
     Returns:
         wafamole.models.Model: WAFamole model
     """
+
     def predict_vec(vec, model):
         probs = model.predict_proba([vec])[0]
         attack_index = list(model.classes_).index(1)
@@ -395,7 +396,7 @@ def create_adv_train_test_split(
     log("Optimizing train payloads...")
     for batch in train_adv_batches:
         wafamole_model = create_wafamole_model(
-        model_trained, modsec, rule_ids, paranoia_level
+            model_trained, modsec, rule_ids, paranoia_level
         )
         engine = EvasionEngine(wafamole_model)
         optimize(batch, len(batch), engine)
@@ -403,7 +404,7 @@ def create_adv_train_test_split(
     log("Optimizing test payloads...")
     for batch in test_adv_batches:
         wafamole_model = create_wafamole_model(
-        model_trained, modsec, rule_ids, paranoia_level
+            model_trained, modsec, rule_ids, paranoia_level
         )
         engine = EvasionEngine(wafamole_model)
         optimize(batch, len(batch), engine)
