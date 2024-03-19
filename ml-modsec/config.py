@@ -24,3 +24,4 @@ class BaseConfig:
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
     RULE_IDS = get_rules_list()
     BATCH_SIZE = 10
+    DESIRED_FPR = 0.01

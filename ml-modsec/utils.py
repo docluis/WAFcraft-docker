@@ -537,3 +537,19 @@ def test_evasion(
     )
 
     log("\nEvasion successful" if min_confidence < threshold else "Evasion failed")
+
+
+def load_data_label_vector(file_path):
+    """
+    Reads a csv file and returns a dataframe with vectorized payloads
+
+    Parameters:
+        file_path (str): Path to the file containing payloads
+
+    Returns:
+        pd.DataFrame: Dataframe with vectorized payloads
+    """
+    data = pd.read_csv(file_path)
+    # convert string in vector to numpy array
+    data["vector"] = data["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
+    return data

@@ -4,12 +4,7 @@ import shutil
 
 import joblib
 from sklearn.ensemble import RandomForestClassifier
-from utils import (
-    create_adv_train_test_split,
-    create_train_test_split,
-    train_model,
-    log
-)
+from utils import create_adv_train_test_split, create_train_test_split, train_model, log
 
 from config import BaseConfig
 
@@ -43,9 +38,9 @@ if __name__ == "__main__":
 
     # 2. train Config.MODEL
     model_trained, threshold = train_model(
-        train=train, test=test, model=Config.MODEL, desired_fpr=0.01
+        train=train, test=test, model=Config.MODEL, desired_fpr=Config.DESIRED_FPR
     )
-    joblib.dump(model_trained, f"{data_path}/Config.MODEL.joblib")
+    joblib.dump(model_trained, f"{data_path}/model.joblib")
     with open(f"{data_path}/threshold.txt", "w") as f:
         f.write(str(threshold))
 
@@ -66,4 +61,3 @@ if __name__ == "__main__":
     test_adv.to_csv(f"{data_path}/test_adv.csv", index=False)
     # delete tmp files
     shutil.rmtree(f"{data_path}/tmp")
-

@@ -3,10 +3,10 @@
 # TODO: proper attribution
 
 import base64
-from ModSecurity import ModSecurity
-from ModSecurity import RulesSet
-from ModSecurity import Transaction
-from ModSecurity import LogProperty
+from ModSecurity import ModSecurity # type: ignore
+from ModSecurity import RulesSet # type: ignore
+from ModSecurity import Transaction # type: ignore
+from ModSecurity import LogProperty # type: ignore
 
 import re
 import glob
