@@ -22,10 +22,10 @@ docker-compose down; docker-compose build; docker-compose up -d; sleep 1; docker
 ```bash
 cd modsecurity-cli
 python main.py --verbose "' or 1=1 -- -"
-python main.py --verbose --rules /app/ml-modsec/rules "' or 1=1 -- -"
+python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 ```
 
-### Simple Test ml-modsec
+### Simple Test wafcraft
 ```bash
 # To test the Jupyter Notebook from VS Code
 # add the following Jupyter Server:

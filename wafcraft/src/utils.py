@@ -28,8 +28,8 @@ from concurrent.futures import ProcessPoolExecutor
 from wafamole.models import Model  # type: ignore
 from wafamole.evasion import EvasionEngine  # type: ignore
 
-rules_path = "/app/ml-modsec/rules"
-log_path = "log.txt"
+rules_path = "/app/wafcraft/rules"
+log_path = "/app/wafcraft/logs/log.txt"
 
 f = io.StringIO()
 
@@ -195,46 +195,6 @@ def train_model(train, test, model, desired_fpr):
         model: Trained Model, float: Trained model and threshold
     """
 
-    def plot_cm(cm):
-        # Plot confusion matrix
-        sns.heatmap(
-            cm,
-            annot=True,
-            fmt="d",
-            xticklabels=["Sane", "Attack"],
-            yticklabels=["Sane", "Attack"],
-            cmap="Blues",
-        )
-        plt.gca().invert_yaxis()
-        plt.gca().invert_xaxis()
-        plt.ylabel("Actual")
-        plt.xlabel("Predicted")
-        plt.title("Confusion Matrix")
-        plt.show()
-
-    def plot_roc(fpr, tpr, closest_idx, desired_fpr):
-        plt.plot(fpr, tpr, label="ROC curve")
-        plt.ylabel("True Positive Rate (TPR)")
-        plt.xlabel("False Positive Rate (FPR)")
-        plt.title("ROC Curve")
-        # plot closest point to desired FPR and add label and annotation, make sure its in foreground
-        plt.scatter(
-            fpr[closest_idx],
-            tpr[closest_idx],
-            color="red",
-            label=f"Closest to FPR of {desired_fpr}",
-            zorder=5,
-        )
-        plt.annotate(
-            f"({round(fpr[closest_idx], 4)}, {round(tpr[closest_idx], 4)})",
-            (fpr[closest_idx], tpr[closest_idx]),
-            textcoords="offset points",
-            xytext=(50, 0),
-            ha="center",
-        )
-        plt.legend()
-        plt.show()
-
     threshold = 0.5
     # Extract features and labels
     X_train, y_train = list(train["vector"]), train["label"]
@@ -265,24 +225,13 @@ def train_model(train, test, model, desired_fpr):
         # 'attack' is considered the positive class (1) and 'sane' is the negative class (0)
         probabilities = model.predict_proba(X_test)[:, 1]
 
-        # TODO: add precision-recall curve? (not sure if it's useful) ask Jonas
-        # precision, recall, thresholds = precision_recall_curve(y_test, probabilities)
-        # thresholds = np.append(thresholds, 1)
-        # plt.figure(figsize=(8, 6))
-        # plt.plot(recall, precision, marker='.', label='Precision-Recall Curve')
-        # plt.xlabel('Recall')
-        # plt.ylabel('Precision')
-        # plt.title('Precision-Recall Curve')
-        # plt.legend()
-        # plt.grid(True)
-        # plt.show()
-
         fpr, tpr, thresholds = roc_curve(y_test, probabilities)  # plot ROC curve
         closest_idx = np.argmin(np.abs(fpr - desired_fpr))  # threshold closest to FPR
         threshold = thresholds[closest_idx]
         adjusted_predictions = (probabilities >= threshold).astype(int)  #  new preds
 
         plot_roc(fpr, tpr, closest_idx, desired_fpr)
+        plot_precision_recall_curve(y_test, probabilities)
 
         log(
             f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})"
@@ -553,3 +502,59 @@ def load_data_label_vector(file_path):
     # convert string in vector to numpy array
     data["vector"] = data["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
     return data
+
+
+def plot_cm(cm):
+    plt.figure(figsize=(4, 3))
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        xticklabels=["Sane", "Attack"],
+        yticklabels=["Sane", "Attack"],
+        cmap="Blues",
+    )
+    plt.gca().invert_yaxis()
+    plt.gca().invert_xaxis()
+    plt.ylabel("Actual")
+    plt.xlabel("Predicted")
+    plt.title("Confusion Matrix")
+    plt.show()
+
+
+def plot_roc(fpr, tpr, closest_idx, desired_fpr):
+    plt.figure(figsize=(4, 3))
+    plt.plot(fpr, tpr, label="ROC curve")
+    plt.ylabel("True Positive Rate (TPR)")
+    plt.xlabel("False Positive Rate (FPR)")
+    plt.title("ROC Curve")
+    # plot closest point to desired FPR and add label and annotation, make sure its in foreground
+    plt.scatter(
+        fpr[closest_idx],
+        tpr[closest_idx],
+        color="red",
+        label=f"Closest to FPR of {desired_fpr}",
+        zorder=5,
+    )
+    plt.annotate(
+        f"({round(fpr[closest_idx], 4)}, {round(tpr[closest_idx], 4)})",
+        (fpr[closest_idx], tpr[closest_idx]),
+        textcoords="offset points",
+        xytext=(50, 0),
+        ha="center",
+    )
+    plt.legend()
+    plt.show()
+
+
+def plot_precision_recall_curve(y_test, probabilities):
+    precision, recall, thresholds = precision_recall_curve(y_test, probabilities)
+    thresholds = np.append(thresholds, 1)
+    plt.figure(figsize=(4, 3))
+    plt.plot(recall, precision, marker=".", label="Precision-Recall Curve")
+    plt.xlabel("Recall")
+    plt.ylabel("Precision")
+    plt.title("Precision-Recall Curve")
+    plt.legend()
+    plt.grid(True)
+    plt.show()

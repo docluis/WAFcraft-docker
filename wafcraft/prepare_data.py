@@ -4,7 +4,12 @@ import shutil
 
 import joblib
 from sklearn.ensemble import RandomForestClassifier
-from utils import create_adv_train_test_split, create_train_test_split, train_model, log
+from src.utils import (
+    create_adv_train_test_split,
+    create_train_test_split,
+    train_model,
+    log,
+)
 
 from config import BaseConfig
 

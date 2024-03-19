@@ -69,8 +69,8 @@ COPY wafamole_dataset /app/wafamole_dataset
 # Copy httpParamsDataset
 COPY httpParamsDataset /app/httpParamsDataset
 
-# Copy ml-modsec
-COPY ml-modsec /app/ml-modsec
+# Copy wafcraft
+COPY wafcraft /app/wafcraft
 
 # Copy and Install WAF-A-MoLE
 COPY WAF-A-MoLE /app/WAF-A-MoLE

@@ -1,7 +1,7 @@
 # This file holds different Configurations
 
 from sklearn.ensemble import RandomForestClassifier
-from utils import get_rules_list
+from src.utils import get_rules_list
 
 
 class BaseConfig:

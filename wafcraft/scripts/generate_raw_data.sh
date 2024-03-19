@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /app/ml-modsec;
+cd /app/wafcraft;
 mkdir data;
 cd data;
 mkdir raw;

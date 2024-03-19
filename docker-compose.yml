@@ -4,7 +4,7 @@ services:
     build: .
     working_dir: /app
     volumes:
-      - ./ml-modsec:/app/ml-modsec
+      - ./wafcraft:/app/wafcraft
     ports:
       - "8888:8888" # HostPort:ContainerPort
     deploy:
