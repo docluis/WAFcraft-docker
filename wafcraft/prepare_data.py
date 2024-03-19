@@ -3,13 +3,9 @@ import os
 import shutil
 
 import joblib
-from sklearn.ensemble import RandomForestClassifier
-from src.utils import (
-    create_adv_train_test_split,
-    create_train_test_split,
-    train_model,
-    log,
-)
+from src.utils import log
+from src.data import create_train_test_split, create_adv_train_test_split
+from src.model import train_model
 
 from config import BaseConfig
 
@@ -66,3 +62,5 @@ if __name__ == "__main__":
     test_adv.to_csv(f"{data_path}/test_adv.csv", index=False)
     # delete tmp files
     shutil.rmtree(f"{data_path}/tmp")
+
+    log(f"Data prepared and saved to {data_path}")

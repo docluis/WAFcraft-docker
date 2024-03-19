@@ -1,0 +1,74 @@
+2024-03-19 20:35:02.646721: Using Configuration: base config, small dataset
+2024-03-19 20:35:02.647047: Reading and parsing data...
+2024-03-19 20:35:06.053205: Splitting into train and test...
+2024-03-19 20:35:06.056719: Creating vectors...
+2024-03-19 20:35:10.892413: Done!
+2024-03-19 20:35:10.892508: Train shape: (400, 3) | Test shape: (200, 3)
+2024-03-19 20:35:11.063510: Model trained successfully!
+2024-03-19 20:35:11.063567: Evaluating model...
+2024-03-19 20:35:11.063613: Default threshold: 0.5
+2024-03-19 20:35:11.088984: FRP is currently at 0.0444
+2024-03-19 20:35:11.101021:               precision    recall  f1-score   support
+
+           0       0.87      0.96      0.91       100
+           1       0.96      0.86      0.91       100
+
+    accuracy                           0.91       200
+   macro avg       0.91      0.91      0.91       200
+weighted avg       0.91      0.91      0.91       200
+
+2024-03-19 20:35:11.146018: Adjusting threshold to match desired FPR of 0.01
+2024-03-19 20:35:11.202442: Adjusted threshold: 0.9875 with FPR of 0.01 (closest to desired FPR 0.01)
+2024-03-19 20:35:11.206559:               precision    recall  f1-score   support
+
+           0       0.59      0.99      0.74       100
+           1       0.97      0.32      0.48       100
+
+    accuracy                           0.66       200
+   macro avg       0.78      0.66      0.61       200
+weighted avg       0.78      0.66      0.61       200
+
+2024-03-19 20:36:44.811908: Train_adv shape: (30, 2) | Test_adv shape: (20, 2)
+2024-03-19 20:36:44.812108: Creating vectors...
+2024-03-19 20:53:28.775316: Model trained successfully!
+2024-03-19 20:53:28.775547: Evaluating model...
+2024-03-19 20:53:28.775610: Default threshold: 0.5
+2024-03-19 20:53:28.801056: FRP is currently at 0.037
+2024-03-19 20:53:28.813128:               precision    recall  f1-score   support
+
+           0       0.86      0.96      0.91       100
+           1       0.96      0.87      0.91       120
+
+    accuracy                           0.91       220
+   macro avg       0.91      0.91      0.91       220
+weighted avg       0.91      0.91      0.91       220
+
+2024-03-19 20:53:28.934501: Adjusting threshold to match desired FPR of 0.01
+2024-03-19 20:53:29.139911: Adjusted threshold: 0.9938 with FPR of 0.01 (closest to desired FPR 0.01)
+2024-03-19 20:53:29.144276:               precision    recall  f1-score   support
+
+           0       0.53      0.99      0.69       100
+           1       0.97      0.28      0.43       120
+
+    accuracy                           0.60       220
+   macro avg       0.75      0.63      0.56       220
+weighted avg       0.77      0.60      0.55       220
+
+2024-03-19 20:53:29.253082: Payload: SELECT SLEEP(5)#";
+2024-03-19 20:53:29.253379: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-19 20:53:29.253443: Confidence: 0.90143
+2024-03-19 20:53:49.397918: Min payload: b'SELECT SLEEP((SELECT (SELECT 5)))   AND   True AND\nTrue AND 0x1 AND 1#";yg'
+2024-03-19 20:53:49.398139: Min confidence: 0.52103
+2024-03-19 20:53:49.398205: Reduced confidence from 0.90143 to 0.52103 (reduction of 0.3804)
+2024-03-19 20:53:49.398249: 
+Evasion successful
+2024-03-19 20:53:49.431310: Payload: SELECT SLEEP(5)#";
+2024-03-19 20:53:49.431560: Vec: [0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 1 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ 1 0 0 0 0 0 1 0 0 0 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0]
+2024-03-19 20:53:49.431623: Confidence: 0.83411
+2024-03-19 20:54:17.638948: Min payload: b'SELECT\nSLEEP(0x5) AND (SELECT 6505) NOT  LIKE  (SELECT 6506) && NkbV LIKE NkbV#";\\'
+2024-03-19 20:54:17.639168: Min confidence: 0.59414
+2024-03-19 20:54:17.639233: Reduced confidence from 0.83411 to 0.59414 (reduction of 0.23997)
+2024-03-19 20:54:17.639276: 
+Evasion successful
