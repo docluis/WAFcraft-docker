@@ -112,7 +112,6 @@ def create_train_test_split(
     train_sanes_size,
     test_attacks_size,
     test_sanes_size,
-    modsec,
     rule_ids,
     paranoia_level,
 ):
@@ -126,7 +125,6 @@ def create_train_test_split(
         train_sanes_size (float): Number of sane payloads to use for training
         test_attacks_size (float): Number of attack payloads to use for testing
         test_sanes_size (float): Number of sane payloads to use for testing
-        modsec (modsecurity.ModSecurity): ModSecurity instance
         rule_ids (list): List of rule IDs
         paranoia_level (int): Paranoia level
     """
@@ -174,6 +172,7 @@ def create_train_test_split(
 
     # Add vector for payloads in train and test
     log("Creating vectors...")
+    modsec = init_modsec()
     train = add_vec(train, rule_ids, modsec, paranoia_level)
     test = add_vec(test, rule_ids, modsec, paranoia_level)
 
@@ -343,44 +342,45 @@ def create_wafamole_model(
 
 
 def optimize(
-    data_set,
-    data_set_size,
-    model_trained,
+    data_path,
+    batch_number,
     label,
-    path,
+    model_trained,
     engine_settings,
     rule_ids,
     paranoia_level,
+    tmp_path,
 ):
-    try:
-        modsec = init_modsec()
-        wafamole_model = create_wafamole_model(
-            model_trained, modsec, rule_ids, paranoia_level
-        )
-        engine = EvasionEngine(wafamole_model)
-        for i, row in tqdm(data_set.iterrows(), total=data_set_size):
+    modsec = init_modsec()
+    wafamole_model = create_wafamole_model(
+        model_trained, modsec, rule_ids, paranoia_level
+    )
+    data_set = pd.read_csv(data_path)
+    engine = EvasionEngine(wafamole_model)
+
+    for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
+        try:
             with contextlib.redirect_stdout(f):
-                try:
-                    min_confidence, min_payload = engine.evaluate(
-                        payload=base64.b64decode(row["data"]).decode("utf-8"),
-                        **engine_settings,
-                    )
-                    data_set.at[i, "data"] = base64.b64encode(
-                        min_payload.encode("utf-8")
-                    ).decode("utf-8")
-                except Exception as e:
-                    if min_payload is None:
-                        log(f"Error: {e}, dropping row {i}")
-                        data_set.drop(i, inplace=True)
-                    else:
-                        # If a payload was captured before the timeout/error, save it
-                        data_set.at[i, "data"] = base64.b64encode(
-                            min_payload.encode("utf-8")
-                        ).decode("utf-8")
-                    continue
-        data_set.to_csv(f"{path}/{label}_adv.csv", mode="a", index=False, header=False)
-    except Exception as e:
-        log(f"Error: {e}, could not optimize batch")
+                min_confidence, min_payload = engine.evaluate(
+                    payload=base64.b64decode(row["data"]).decode("utf-8"),
+                    **engine_settings,
+                )
+            data_set.at[i, "data"] = base64.b64encode(
+                min_payload.encode("utf-8")
+            ).decode("utf-8")
+        except Exception as e:
+            if not min_payload == None:
+                data_set.at[i, "data"] = base64.b64encode(
+                    min_payload.encode("utf-8")
+                ).decode("utf-8")
+            log(f"Error: {e}")
+            continue
+    data_set.to_csv(
+        f"{tmp_path}/optimized/{label}_adv_{batch_number}.csv",
+        mode="a",
+        index=False,
+        header=False,
+    )
 
 
 def create_adv_train_test_split(
@@ -390,11 +390,10 @@ def create_adv_train_test_split(
     test_adv_size,
     model_trained,
     engine_settings,
-    modsec,
     rule_ids,
     paranoia_level,
     batch_size,
-    cluster_size,
+    tmp_path,
 ):
     """
     Returns train and test dataframes with adversarial payloads
@@ -406,7 +405,6 @@ def create_adv_train_test_split(
         test_adv_size (float): Number of adversarial payloads to generate for testing
         model_trained (sklearn.ensemble.RandomForestClassifier): Trained model
         engine_settings (dict): Settings for the model
-        modsec (modsecurity.ModSecurity): ModSecurity instance
         rule_ids (list): List of rule IDs
         paranoia_level (int): Paranoia level
         batch_size (int): Batch size for optimization
@@ -414,48 +412,13 @@ def create_adv_train_test_split(
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
-
-    def optimize_parallel(batches, label):
-        batches_clusters = [
-            batches[i : i + cluster_size] for i in range(0, len(batches), cluster_size)
-        ]
-        for i, batch_cluster in enumerate(batches_clusters):
-            print(f"Processing cluster {i+1}/{len(batches_clusters)}")
-            with ProcessPoolExecutor() as executor:
-                futures = []
-                # create a copy of the model for each process
-                model_trained_copy = model_trained
-                for batch in batch_cluster:
-                    future = executor.submit(
-                        optimize,
-                        batch,
-                        len(batch),
-                        model_trained_copy,
-                        label,
-                        path,
-                        engine_settings,
-                        rule_ids,
-                        paranoia_level,
-                    )
-                    futures.append(future)
-                for future in futures:
-                    try:
-                        future.result()
-                    except Exception as e:
-                        log(f"Error processing future: {e}")
-                        continue
-            time.sleep(2)
-
-    ts = pd.Timestamp.now().strftime("%Y-%m-%d-%H-%M-%S")
-    path = f"data/tmp/{ts}"
-    if not os.path.exists(path):
-        os.makedirs(path)
+    # create directories
+    os.makedirs(f"{tmp_path}/todo", exist_ok=True)
+    os.makedirs(f"{tmp_path}/optimized", exist_ok=True)
 
     # Sample train and test dataframes, only use attack payloads
     train_adv = (
-        train[train["label"] == 1]  # only use attack payloads
-        .sample(n=train_adv_size)
-        .drop(columns=["vector"])
+        train[train["label"] == 1].sample(n=train_adv_size).drop(columns=["vector"])
     )
     test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
 
@@ -466,24 +429,79 @@ def create_adv_train_test_split(
         test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
     ]
 
-    log("Optimizing train payloads...")
-    # for batch in train_adv_batches:
-    #     optimize(batch, len(batch), model_trained, "train", path, engine_settings, rule_ids, paranoia_level)
-    optimize_parallel(train_adv_batches, "train")
+    # Save each batch to a csv
+    for i, batch in enumerate(train_adv_batches):
+        batch.to_csv(f"{tmp_path}/todo/train_adv_{i}.csv", index=False, header=True)
+    for i, batch in enumerate(test_adv_batches):
+        batch.to_csv(f"{tmp_path}/todo/test_adv_{i}.csv", index=False, header=True)
 
-    log("Optimizing test payloads...")
-    # for batch in test_adv_batches:
-    #     optimize(batch, len(batch), model_trained, "test", path, engine_settings, rule_ids, paranoia_level)
-    optimize_parallel(test_adv_batches, "test")
+    # Optimize each batch with subproceesses
 
-    # read the csv, add the data, remember it has no headers currently
-    train_adv = pd.read_csv(f"{path}/train_adv.csv", names=["data", "label"])
-    test_adv = pd.read_csv(f"{path}/test_adv.csv", names=["data", "label"])
+    # optimize is prone to TimeoutError, so use multiprocessing
+
+    import multiprocessing
+
+    with multiprocessing.Pool() as pool:
+        pool.starmap(
+            optimize,
+            [
+                (
+                    f"{tmp_path}/todo/train_adv_{i}.csv",
+                    i,
+                    "train",
+                    model_trained,
+                    engine_settings,
+                    rule_ids,
+                    paranoia_level,
+                    tmp_path,
+                )
+                for i in range(len(train_adv_batches))
+            ],
+        )
+        pool.starmap(
+            optimize,
+            [
+                (
+                    f"{tmp_path}/todo/test_adv_{i}.csv",
+                    i,
+                    "test",
+                    model_trained,
+                    engine_settings,
+                    rule_ids,
+                    paranoia_level,
+                    tmp_path,
+                )
+                for i in range(len(test_adv_batches))
+            ],
+        )
+
+    # Read and concatenate optimized batches (keep in mind that there are no names for the columns)
+    train_adv = pd.concat(
+        [
+            pd.read_csv(
+                f"{tmp_path}/optimized/train_adv_{i}.csv",
+                names=["data", "label"],
+                header=None,
+            )
+            for i in range(len(train_adv_batches))
+        ]
+    )
+    test_adv = pd.concat(
+        [
+            pd.read_csv(
+                f"{tmp_path}/optimized/test_adv_{i}.csv",
+                names=["data", "label"],
+                header=None,
+            )
+            for i in range(len(test_adv_batches))
+        ]
+    )
 
     log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
 
     # Add vector for payloads in train and test
     log("Creating vectors...")
+    modsec = init_modsec()
     train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
     test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
 

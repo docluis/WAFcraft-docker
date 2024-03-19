@@ -5,6 +5,7 @@ ml-modsec/train_dataset.csv
 ml-modsec/test_dataset.csv
 ml-modsec/data/raw
 ml-modsec/data/tmp
+ml-modsec/data/prepared/*
 ml-modsec/data/preprocessed
 ml-modsec/__pycache__
 ml-modsec/.ipynb_checkpoints
