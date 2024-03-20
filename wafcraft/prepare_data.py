@@ -10,7 +10,7 @@ from src.model import train_model
 from config import BaseConfig, HalfConfig, StressConfig
 
 # Choose the configuration
-Config = StressConfig
+Config = HalfConfig
 log(f"Using Configuration: {Config.DESCRIPTION}", 2)
 
 # get timestamp
@@ -64,4 +64,8 @@ if __name__ == "__main__":
     # delete tmp files
     shutil.rmtree(f"{data_path}/tmp")
 
-    log(f"Data prepared and saved to {data_path}", 2)
+    log(
+        f"Data prepared! train: {train.shape[0] + train_adv.shape[0]} test: {test.shape[0] + test_adv.shape[0]}",
+        2,
+    )
+    log(f"Saved to {data_path}", 2)
