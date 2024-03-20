@@ -8,7 +8,9 @@ cd WAFcraft-docker
 git clone git@github.com:pymodsecurity/pymodsecurity.git
 git clone git@github.com:AvalZ/modsecurity-cli.git
 git clone git@github.com:coreruleset/coreruleset.git
+git clone git@github.com:AvalZ/WAF-A-MoLE.git
 git clone git@github.com:zangobot/wafamole_dataset.git
+git clone git@github.com:Morzeux/HttpParamsDataset.git
 # 3. Download and extract Modsecurity 3.0.10 release
 wget https://github.com/SpiderLabs/ModSecurity/releases/download/v3.0.10/modsecurity-v3.0.10.tar.gz
 tar -xzf modsecurity-v3.0.10.tar.gz
