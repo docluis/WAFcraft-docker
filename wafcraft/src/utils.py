@@ -14,18 +14,19 @@ rules_path = "/app/wafcraft/rules"
 log_path = "/app/wafcraft/logs/log.txt"
 
 
-def log(message, notify=False):
-    print(message)
+def log(message, level=1):
     time = pd.Timestamp.now()
     with open(log_path, "a") as log_file:
         log_file.write(f"{time}: {message}\n")
-    if notify:
-        try:
-            os.system(
-                f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
-            )
-        except Exception as e:
-            print(f"Not able to notify: {e}")
+    if level >= 2:
+        print(message)
+        if level >= 3:
+            try:
+                os.system(
+                    f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
+                )
+            except Exception as e:
+                print(f"Not able to notify: {e}")
 
 
 # TODO: improve this function
@@ -41,7 +42,6 @@ def get_rules_list():
             all_rules.extend(matches)
     # return sorted list of unique rule IDs
     return sorted(set(all_rules))
-
 
 
 def load_data_label_vector(file_path):

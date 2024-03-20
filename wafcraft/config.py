@@ -24,4 +24,53 @@ class BaseConfig:
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
     RULE_IDS = get_rules_list()
     BATCH_SIZE = 10
+    MAX_PROCESSES = 4
+    DESIRED_FPR = 0.01
+
+
+class StressConfig:
+    DESCRIPTION = "stress test for generating adversarial samples"
+    ATTACK_DATA_PATH = "data/raw/attacks_20k.sql"
+    SANE_DATA_PATH = "data/raw/sanes_20k.sql"
+    TRAIN_ATTACKS_SIZE = 2000  # paper uses 10000
+    TRAIN_SANES_SIZE = 2000  # paper uses 10000
+    TEST_ATTACKS_SIZE = 1000  # paper uses 2000
+    TEST_SANES_SIZE = 1000  # paper uses 2000
+    TRAIN_ADV_SIZE = 1000  # paper uses 5000 (1/4 of total train set size)
+    TEST_ADV_SIZE = 600  # paper uses 2000 (1/2 of total test set size)
+    ENGINE_SETTINGS = {
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 5,
+    }
+    PARANOIA_LEVEL = 4
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    RULE_IDS = get_rules_list()
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 4
+    DESIRED_FPR = 0.01
+
+
+class HalfConfig:
+    DESCRIPTION = "half data set size from paper"
+    ATTACK_DATA_PATH = "data/raw/attacks_full.sql"
+    SANE_DATA_PATH = "data/raw/sanes_full.sql"
+    TRAIN_ATTACKS_SIZE = 5000  # paper uses 10000
+    TRAIN_SANES_SIZE = 5000  # paper uses 10000
+    TEST_ATTACKS_SIZE = 1000  # paper uses 2000
+    TEST_SANES_SIZE = 1000  # paper uses 2000
+    TRAIN_ADV_SIZE = 2500  # paper uses 5000 (1/4 of total train set size)
+    TEST_ADV_SIZE = 1000  # paper uses 2000 (1/2 of total test set size)
+    ENGINE_SETTINGS = {
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 5,
+    }
+    PARANOIA_LEVEL = 4
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    RULE_IDS = get_rules_list()
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 4
     DESIRED_FPR = 0.01

@@ -7,11 +7,11 @@ from src.utils import log
 from src.data import create_train_test_split, create_adv_train_test_split
 from src.model import train_model
 
-from config import BaseConfig
+from config import BaseConfig, HalfConfig, StressConfig
 
 # Choose the configuration
-Config = BaseConfig
-log(f"Using Configuration: {Config.DESCRIPTION}")
+Config = StressConfig
+log(f"Using Configuration: {Config.DESCRIPTION}", 2)
 
 # get timestamp
 ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -56,6 +56,7 @@ if __name__ == "__main__":
         rule_ids=Config.RULE_IDS,
         paranoia_level=Config.PARANOIA_LEVEL,
         batch_size=Config.BATCH_SIZE,
+        max_processes=Config.MAX_PROCESSES,
         tmp_path=f"{data_path}/tmp",
     )
     train_adv.to_csv(f"{data_path}/train_adv.csv", index=False)
@@ -63,4 +64,4 @@ if __name__ == "__main__":
     # delete tmp files
     shutil.rmtree(f"{data_path}/tmp")
 
-    log(f"Data prepared and saved to {data_path}")
+    log(f"Data prepared and saved to {data_path}", 2)

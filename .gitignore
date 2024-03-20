@@ -9,5 +9,5 @@ wafcraft/data/prepared/*
 wafcraft/data/preprocessed
 wafcraft/__pycache__
 wafcraft/.ipynb_checkpoints
-wafcraft/log.txt
+wafcraft/logs/*
 wafcraft/src/__pycache__

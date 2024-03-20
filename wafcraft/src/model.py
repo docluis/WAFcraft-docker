@@ -62,26 +62,26 @@ def train_model(train, test, model, desired_fpr):
 
     # Train the model
     model.fit(X_train, y_train)
-    log("Model trained successfully!")
+    log("Model trained successfully!", 2)
 
     # Evaluate the model
-    log("Evaluating model...")
-    log(f"Default threshold: {threshold}")
+    log("Evaluating model...", 2)
+    log(f"Default threshold: {threshold}", 2)
     # calculate FPR = FP / (FP + TN)
     current_fpr = confusion_matrix(y_test, model.predict(X_test))[0, 1] / (
         confusion_matrix(y_test, model.predict(X_test))[0, 1]
         + confusion_matrix(y_test, model.predict(X_test))[1, 1]
     )
 
-    log(f"FRP is currently at {round(current_fpr, 4)}")
+    log(f"FRP is currently at {round(current_fpr, 4)}", 2)
     predictions = model.predict(X_test)
-    log(classification_report(y_test, predictions))
+    log(classification_report(y_test, predictions), 2)
 
     cm = confusion_matrix(y_test, predictions)
     plot_cm(cm)
 
     if desired_fpr is not None:
-        log(f"Adjusting threshold to match desired FPR of {desired_fpr}")
+        log(f"Adjusting threshold to match desired FPR of {desired_fpr}", 2)
         # 'attack' is considered the positive class (1) and 'sane' is the negative class (0)
         probabilities = model.predict_proba(X_test)[:, 1]
 
@@ -94,9 +94,10 @@ def train_model(train, test, model, desired_fpr):
         plot_precision_recall_curve(y_test, probabilities)
 
         log(
-            f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})"
+            f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})",
+            2,
         )
-        log(classification_report(y_test, adjusted_predictions))
+        log(classification_report(y_test, adjusted_predictions), 2)
 
         cm = confusion_matrix(y_test, adjusted_predictions)
         plot_cm(cm)
@@ -164,18 +165,19 @@ def test_evasion(
     payload_base64 = base64.b64encode(payload.encode("utf-8")).decode("utf-8")
     vec = payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level)
     is_attack = wafamole_model.classify(payload)
-    log(f"Payload: {payload}")
-    log(f"Vec: {vec}")
-    log(f"Confidence: {round(is_attack, 5)}")
+    log(f"Payload: {payload}", 2)
+    log(f"Vec: {vec}", 2)
+    log(f"Confidence: {round(is_attack, 5)}", 2)
 
     min_confidence, min_payload = engine.evaluate(
         payload=payload,
         **engine_eval_settings,
     )
-    log(f"Min payload: {min_payload.encode('utf-8')}")
-    log(f"Min confidence: {round(min_confidence, 5)}")
+    log(f"Min payload: {min_payload.encode('utf-8')}", 2)
+    log(f"Min confidence: {round(min_confidence, 5)}", 2)
     log(
-        f"Reduced confidence from {round(is_attack, 5)} to {round(min_confidence, 5)} (reduction of {round(is_attack - min_confidence, 5)})"
+        f"Reduced confidence from {round(is_attack, 5)} to {round(min_confidence, 5)} (reduction of {round(is_attack - min_confidence, 5)})",
+        2,
     )
 
-    log("\nEvasion successful" if min_confidence < threshold else "Evasion failed")
+    log("\nEvasion successful" if min_confidence < threshold else "Evasion failed", 2)

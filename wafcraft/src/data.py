@@ -2,6 +2,7 @@ import base64
 import contextlib
 import io
 import os
+import multiprocessing
 
 import sqlparse
 import pandas as pd
@@ -74,14 +75,14 @@ def create_train_test_split(
 
         return pd.DataFrame(parsed_data)
 
-    log("Reading and parsing data...")
+    log("Reading and parsing data...", 2)
 
     attacks = read_and_parse(attack_file)
     attacks["label"] = 1
     sanes = read_and_parse(sane_file)
     sanes["label"] = 0
 
-    log("Splitting into train and test...")
+    log("Splitting into train and test...", 2)
     train_attacks, test_attacks = train_test_split(
         attacks,
         train_size=train_attacks_size,
@@ -103,13 +104,13 @@ def create_train_test_split(
     test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
 
     # Add vector for payloads in train and test
-    log("Creating vectors...")
+    log("Creating vectors...", 2)
     modsec = init_modsec()
     train = add_vec(train, rule_ids, modsec, paranoia_level)
     test = add_vec(test, rule_ids, modsec, paranoia_level)
 
     log("Done!")
-    log(f"Train shape: {train.shape} | Test shape: {test.shape}")
+    log(f"Train shape: {train.shape} | Test shape: {test.shape}", 2)
     return train, test
 
 
@@ -129,24 +130,24 @@ def optimize(
     )
     data_set = pd.read_csv(data_path)
     engine = EvasionEngine(wafamole_model)
-
-    for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
-        try:
-            with contextlib.redirect_stdout(f):
-                min_confidence, min_payload = engine.evaluate(
-                    payload=base64.b64decode(row["data"]).decode("utf-8"),
-                    **engine_settings,
-                )
-            data_set.at[i, "data"] = base64.b64encode(
-                min_payload.encode("utf-8")
-            ).decode("utf-8")
-        except Exception as e:
-            if not min_payload == None:
+    with open("/app/wafcraft/logs/wafamole_log.txt", "a") as f:
+        for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
+            try:
+                with contextlib.redirect_stdout(f):
+                    min_confidence, min_payload = engine.evaluate(
+                        payload=base64.b64decode(row["data"]).decode("utf-8"),
+                        **engine_settings,
+                    )
                 data_set.at[i, "data"] = base64.b64encode(
                     min_payload.encode("utf-8")
                 ).decode("utf-8")
-            log(f"Error: {e}")
-            continue
+            except Exception as e:
+                if not min_payload == None:
+                    data_set.at[i, "data"] = base64.b64encode(
+                        min_payload.encode("utf-8")
+                    ).decode("utf-8")
+                log(f"Error: {e}")
+                continue
     data_set.to_csv(
         f"{tmp_path}/optimized/{label}_adv_{batch_number}.csv",
         mode="a",
@@ -165,6 +166,7 @@ def create_adv_train_test_split(
     rule_ids,
     paranoia_level,
     batch_size,
+    max_processes,
     tmp_path,
 ):
     """
@@ -211,9 +213,7 @@ def create_adv_train_test_split(
 
     # optimize is prone to TimeoutError, so use multiprocessing
 
-    import multiprocessing
-
-    with multiprocessing.Pool() as pool:
+    with multiprocessing.Pool(processes=max_processes) as pool:
         pool.starmap(
             optimize,
             [
@@ -247,7 +247,10 @@ def create_adv_train_test_split(
             ],
         )
 
+    log("Done optimizing, concatenating...", 2)
+
     # Read and concatenate optimized batches (keep in mind that there are no names for the columns)
+    # TODO: ? some files may not exist, so use try-except
     train_adv = pd.concat(
         [
             pd.read_csv(
@@ -269,10 +272,10 @@ def create_adv_train_test_split(
         ]
     )
 
-    log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}")
+    log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}", 2)
 
     # Add vector for payloads in train and test
-    log("Creating vectors...")
+    log("Creating vectors...", 2)
     modsec = init_modsec()
     train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
     test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
