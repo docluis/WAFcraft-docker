@@ -20,17 +20,16 @@ gh pr checkout 21
 # 5. Build the container and Attach!
 docker-compose down; docker-compose build; docker-compose up -d; sleep 1; docker-compose exec wafcraft bash
 ```
-### Simple Test modsecurity-cli
+### How to run modsecurity-cli
 ```bash
 cd modsecurity-cli
 python main.py --verbose "' or 1=1 -- -"
 python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 ```
 
-### Simple Test wafcraft
+### How to run wafcraft
 ```bash
-# To test the Jupyter Notebook from VS Code
-# add the following Jupyter Server:
-# http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT
-# then run the notebook!
+cd wafcraft
+python prepare_data.py
 ```
+> Access the **Jupyter Notebooks** via: http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT
