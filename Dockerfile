@@ -67,7 +67,7 @@ COPY coreruleset /app/modsecurity-cli/coreruleset
 COPY wafamole_dataset /app/wafamole_dataset
 
 # Copy httpParamsDataset
-COPY httpParamsDataset /app/httpParamsDataset
+COPY HttpParamsDataset /app/HttpParamsDataset
 
 # Copy wafcraft
 COPY wafcraft /app/wafcraft

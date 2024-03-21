@@ -154,6 +154,7 @@ def optimize(
         index=False,
         header=False,
     )
+    log(f"Batch {batch_number} done!")
 
 
 def create_adv_train_test_split(

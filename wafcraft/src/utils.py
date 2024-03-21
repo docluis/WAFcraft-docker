@@ -28,6 +28,12 @@ def log(message, level=1):
             except Exception as e:
                 print(f"Not able to notify: {e}")
 
+def get_config_string(Config):
+    config = ""
+    for key, value in Config.__dict__.items():
+        # shorten value if it is too long
+        config += f"{key: >20}: {value}\n"
+    return config
 
 # TODO: improve this function
 def get_rules_list():

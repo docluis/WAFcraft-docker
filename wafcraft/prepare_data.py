@@ -3,7 +3,7 @@ import os
 import shutil
 
 import joblib
-from src.utils import log
+from src.utils import get_config_string, log
 from src.data import create_train_test_split, create_adv_train_test_split
 from src.model import train_model
 
@@ -11,7 +11,8 @@ from config import BaseConfig, HalfConfig, StressConfig
 
 # Choose the configuration
 Config = HalfConfig
-log(f"Using Configuration: {Config.DESCRIPTION}", 2)
+log("Starting data preparation", 2)
+log(f"Using Config:\n{get_config_string(Config)}", 2)
 
 # get timestamp
 ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -66,6 +67,6 @@ if __name__ == "__main__":
 
     log(
         f"Data prepared! train: {train.shape[0] + train_adv.shape[0]} test: {test.shape[0] + test_adv.shape[0]}",
-        2,
+        3,
     )
     log(f"Saved to {data_path}", 2)
