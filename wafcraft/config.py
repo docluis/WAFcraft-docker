@@ -72,5 +72,5 @@ class HalfConfig:
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
     RULE_IDS = get_rules_list()
     BATCH_SIZE = 10
-    MAX_PROCESSES = 4
+    MAX_PROCESSES = 8
     DESIRED_FPR = 0.01

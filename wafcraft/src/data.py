@@ -142,11 +142,13 @@ def optimize(
                     min_payload.encode("utf-8")
                 ).decode("utf-8")
             except Exception as e:
-                if not min_payload == None:
+                log(f"Error optimizing payload {i}: {e}")
+                log(f"Payload: {row['data']}")
+                if min_payload is not None:
                     data_set.at[i, "data"] = base64.b64encode(
                         min_payload.encode("utf-8")
                     ).decode("utf-8")
-                log(f"Error: {e}")
+                    log(f"min_payload not None: {min_payload}")
                 continue
     data_set.to_csv(
         f"{tmp_path}/optimized/{label}_adv_{batch_number}.csv",
