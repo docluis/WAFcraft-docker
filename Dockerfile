@@ -19,7 +19,8 @@ RUN apt-get update && apt-get install -y \
     libyajl-dev \
     pkgconf \
     zlib1g-dev \
-    zip
+    zip \
+    htop
 
 # Copy only the necessary files for modsecurity installation
 COPY ./modsecurity-v3.0.10 /app/modsecurity-v3.0.10
