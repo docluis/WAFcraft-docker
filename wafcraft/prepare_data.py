@@ -23,6 +23,9 @@ os.makedirs(f"{data_path}/tmp", exist_ok=True)
 
 # main
 if __name__ == "__main__":
+    # log config
+    with open(f"{data_path}/config.txt", "w") as f:
+        f.write(get_config_string(Config))
 
     # 1. create train and test sets
     train, test = create_train_test_split(
@@ -38,7 +41,7 @@ if __name__ == "__main__":
     train.to_csv(f"{data_path}/train.csv", index=False)
     test.to_csv(f"{data_path}/test.csv", index=False)
 
-    # 2. train Config.MODEL
+    # 2. train model
     model_trained, threshold = train_model(
         train=train, test=test, model=Config.MODEL, desired_fpr=Config.DESIRED_FPR
     )
