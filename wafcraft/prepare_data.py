@@ -1,3 +1,21 @@
+# This script prepares the data for training and testing the model.
+
+# Description:
+# The script can be run in two modes:
+# - prepare: Prepare the data and train the model
+# - optimize: Optimize the data using the trained model
+
+# To prepare train, test, train_adv, and test_adv data both modes are required.
+
+# (Since the optimization process is error-prone and can be interrupted, optimization
+# is moved to a separate mode to allow for continuing  optimization process after it is
+# interrupted or some error occurs)
+
+# Usage:
+# python prepare_data.py --mode prepare
+# python prepare_data.py --mode optimize
+# python prepare_data.py --mode optimize --data_path data/prepared/2023-12-31-12-00-00
+
 import datetime
 import os
 import shutil
@@ -20,7 +38,6 @@ from config import BaseConfig, HalfConfig, StressConfig
 
 # Choose the configuration
 Config = HalfConfig
-
 
 
 def prepare_and_train():
