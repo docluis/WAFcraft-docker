@@ -21,12 +21,11 @@ from config import BaseConfig, HalfConfig, StressConfig
 # Choose the configuration
 Config = HalfConfig
 
-# get timestamp
-ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-data_path = f"data/prepared/{ts}"
 
 
 def prepare_and_train():
+    ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    data_path = f"data/prepared/{ts}"
     os.makedirs(data_path, exist_ok=True)
     os.makedirs(f"{data_path}/tmp", exist_ok=True)
     log("Starting data preparation", 2)
