@@ -15,7 +15,7 @@ from src.model import create_wafamole_model, payload_to_vec
 from src.utils import log
 
 
-f = io.StringIO()
+wafamole_log = "logs/wafamole_log.txt"
 
 
 def add_vec(data, rule_ids, modsec, paranoia_level):
@@ -114,23 +114,80 @@ def create_train_test_split(
     return train, test
 
 
+def prepare_batches_to_todo(
+    train,
+    test,
+    train_adv_size,
+    test_adv_size,
+    batch_size,
+    data_path,
+):
+    """
+    Prepares batches for optimization and saves them in data_path/tmp/todo
+
+    Parameters:
+        train (pd.DataFrame): Train dataframe
+        test (pd.DataFrame): Test dataframe
+        train_adv_size (int): Number of adversarial payloads to use for training
+        test_adv_size (int): Number of adversarial payloads to use for testing
+        batch_size (int): Number of payloads in each batch
+        data_path (str): Path to the data directory
+
+    """
+    # create directories
+    os.makedirs(f"{data_path}/tmp/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp/optimized", exist_ok=True)
+
+    # Sample train and test dataframes, only use attack payloads
+    train_adv = (
+        train[train["label"] == 1].sample(n=train_adv_size).drop(columns=["vector"])
+    )
+    test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
+
+    train_adv_batches = [
+        train_adv[i : i + batch_size] for i in range(0, len(train_adv), batch_size)
+    ]
+    test_adv_batches = [
+        test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
+    ]
+
+    # Save each batch to a csv in data_path/tmp/todo
+    for i, batch in enumerate(train_adv_batches):
+        batch.to_csv(
+            f"{data_path}/tmp/todo/train_adv_{i}.csv", index=False, header=True
+        )
+    for i, batch in enumerate(test_adv_batches):
+        batch.to_csv(f"{data_path}/tmp/todo/test_adv_{i}.csv", index=False, header=True)
+
+
 def optimize(
     data_path,
-    batch_number,
-    label,
+    file_name,
     model_trained,
     engine_settings,
     rule_ids,
     paranoia_level,
-    tmp_path,
 ):
+    """
+    Optimizes payloads in data_path/tmp/todo/{label}_adv_{batch_number}.csv
+    Data is saved to data_path/tmp/optimized/{label}_adv_{batch_number}.csv
+
+    Parameters:
+        data_path (str): Path to the data directory
+        batch_number (int): Number of the batch
+        label (str): Label of the batch
+        model_trained (sklearn.base.BaseEstimator): Trained model
+        engine_settings (dict): Settings for the evasion engine
+        rule_ids (list): List of rule IDs
+        paranoia_level (int): Paranoia level
+    """
     modsec = init_modsec()
     wafamole_model = create_wafamole_model(
         model_trained, modsec, rule_ids, paranoia_level
     )
-    data_set = pd.read_csv(data_path)
+    data_set = pd.read_csv(f"{data_path}/tmp/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
-    with open("/app/wafcraft/logs/wafamole_log.txt", "a") as f:
+    with open(wafamole_log, "a") as f:
         for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
             try:
                 with contextlib.redirect_stdout(f):
@@ -151,134 +208,90 @@ def optimize(
                     log(f"min_payload not None: {min_payload}")
                 continue
     data_set.to_csv(
-        f"{tmp_path}/optimized/{label}_adv_{batch_number}.csv",
+        f"{data_path}/tmp/optimized/{file_name}",
         mode="a",
         index=False,
         header=False,
     )
-    log(f"{label} batch {batch_number} done!")
+    os.remove(f"{data_path}/tmp/todo/{file_name}")
+    log(f"{file_name} done!", 1)
 
 
-def create_adv_train_test_split(
-    train,
-    test,
-    train_adv_size,
-    test_adv_size,
+def optimize_data_in_todo(
     model_trained,
     engine_settings,
     rule_ids,
     paranoia_level,
-    batch_size,
     max_processes,
-    tmp_path,
+    data_path,
 ):
     """
-    Returns train and test dataframes with adversarial payloads
+    Reads batches from data_path/tmp/todo and optimizes them using the trained model and engine settings
 
     Parameters:
-        train (pd.DataFrame): Train dataframe
-        test (pd.DataFrame): Test dataframe
-        train_adv_size (float): Number of adversarial payloads to generate for training
-        test_adv_size (float): Number of adversarial payloads to generate for testing
-        model_trained (sklearn.ensemble.RandomForestClassifier): Trained model
-        engine_settings (dict): Settings for the model
+        model_trained (sklearn.base.BaseEstimator): Trained model
+        engine_settings (dict): Settings for the evasion engine
         rule_ids (list): List of rule IDs
         paranoia_level (int): Paranoia level
-        batch_size (int): Batch size for optimization
+        max_processes (int): Maximum number of processes to use
+        data_path (str): Path to the data directory
 
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
-    # create directories
-    os.makedirs(f"{tmp_path}/todo", exist_ok=True)
-    os.makedirs(f"{tmp_path}/optimized", exist_ok=True)
 
-    # Sample train and test dataframes, only use attack payloads
-    train_adv = (
-        train[train["label"] == 1].sample(n=train_adv_size).drop(columns=["vector"])
-    )
-    test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
+    def load_and_concat_csv(files):
+        return pd.concat(
+            [
+                pd.read_csv(
+                    f"{data_path}/tmp/optimized/{file}",
+                    names=["data", "label"],
+                    header=None,
+                )
+                for file in files
+            ]
+        )
 
-    train_adv_batches = [
-        train_adv[i : i + batch_size] for i in range(0, len(train_adv), batch_size)
-    ]
-    test_adv_batches = [
-        test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
-    ]
+    # get all filenames in data_path/tmp/todo
+    todo_files_all = os.listdir(f"{data_path}/tmp/todo")
 
-    # Save each batch to a csv
-    for i, batch in enumerate(train_adv_batches):
-        batch.to_csv(f"{tmp_path}/todo/train_adv_{i}.csv", index=False, header=True)
-    for i, batch in enumerate(test_adv_batches):
-        batch.to_csv(f"{tmp_path}/todo/test_adv_{i}.csv", index=False, header=True)
-
-    # Optimize each batch with subproceesses
+    log(f"optimizing {len(todo_files_all)} batches...", 2)
 
     # optimize is prone to TimeoutError, so use multiprocessing
-
     with multiprocessing.Pool(processes=max_processes) as pool:
         pool.starmap(
             optimize,
             [
                 (
-                    f"{tmp_path}/todo/train_adv_{i}.csv",
-                    i,
-                    "train",
+                    data_path,
+                    file,
                     model_trained,
                     engine_settings,
                     rule_ids,
                     paranoia_level,
-                    tmp_path,
                 )
-                for i in range(len(train_adv_batches))
-            ],
-        )
-        pool.starmap(
-            optimize,
-            [
-                (
-                    f"{tmp_path}/todo/test_adv_{i}.csv",
-                    i,
-                    "test",
-                    model_trained,
-                    engine_settings,
-                    rule_ids,
-                    paranoia_level,
-                    tmp_path,
-                )
-                for i in range(len(test_adv_batches))
+                for file in todo_files_all
             ],
         )
 
-    log("Done optimizing, concatenating...", 2)
+    # Read and concatenate optimized train
+    optimized_files_train = [
+        file for file in os.listdir(f"{data_path}/tmp/optimized") if "train" in file
+    ]
+    optimized_files_test = [
+        file for file in os.listdir(f"{data_path}/tmp/optimized") if "test" in file
+    ]
 
-    # Read and concatenate optimized batches (keep in mind that there are no names for the columns)
-    # TODO: ? some files may not exist, so use try-except
-    train_adv = pd.concat(
-        [
-            pd.read_csv(
-                f"{tmp_path}/optimized/train_adv_{i}.csv",
-                names=["data", "label"],
-                header=None,
-            )
-            for i in range(len(train_adv_batches))
-        ]
-    )
-    test_adv = pd.concat(
-        [
-            pd.read_csv(
-                f"{tmp_path}/optimized/test_adv_{i}.csv",
-                names=["data", "label"],
-                header=None,
-            )
-            for i in range(len(test_adv_batches))
-        ]
+    log(
+        f"concatenating {len(optimized_files_train)} optimized train baches and {len(optimized_files_test)} optimized test batches...",
+        2,
     )
 
-    log(f"Train_adv shape: {train_adv.shape} | Test_adv shape: {test_adv.shape}", 2)
+    train_adv = load_and_concat_csv(optimized_files_train)
+    test_adv = load_and_concat_csv(optimized_files_test)
 
     # Add vector for payloads in train and test
-    log("Creating vectors...", 2)
+    log("adding vectors...", 2)
     modsec = init_modsec()
     train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
     test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
