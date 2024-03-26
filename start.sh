@@ -1,5 +1,5 @@
 #!/bin/bash
-./app/wafcraft/scripts/generate_raw_data.sh;
+/app/wafcraft/scripts/generate_raw_data.sh;
 
 cd /app/wafcraft;
 

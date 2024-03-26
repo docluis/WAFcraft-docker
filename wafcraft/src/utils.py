@@ -13,6 +13,9 @@ from sklearn.metrics import precision_recall_curve
 rules_path = "/app/wafcraft/rules"
 log_path = "/app/wafcraft/logs/log.txt"
 
+# create logs directory directory if it does not exist
+os.makedirs("/app/wafcraft/logs", exist_ok=True)
+
 
 def log(message, level=1):
     time = pd.Timestamp.now()
@@ -75,11 +78,14 @@ def get_most_recent_data_path():
     Returns:
         str: Path to the most recent prepared data
     """
-    data_path = max(  # use the most recent prepared data
-        [os.path.join("data/prepared/", d) for d in os.listdir("data/prepared/")],
-        key=os.path.getmtime,
-    )
-    return data_path
+    try:
+        data_path = max(  # use the most recent prepared data
+            [os.path.join("data/prepared/", d) for d in os.listdir("data/prepared/")],
+            key=os.path.getmtime,
+        )
+        return data_path
+    except ValueError:
+        return None
 
 
 def plot_cm(cm):

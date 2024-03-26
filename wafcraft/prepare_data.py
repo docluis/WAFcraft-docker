@@ -36,6 +36,8 @@ from src.model import train_model
 
 from config import BaseConfig, HalfConfig, StressConfig
 
+os.makedirs("data/prepared", exist_ok=True)
+
 # Choose the configuration
 Config = HalfConfig
 
