@@ -35,12 +35,12 @@ from src.data import (
 )
 from src.model import train_model
 
-from config import BaseConfig, HalfConfig, StressConfig
+from config import BaseConfig, HalfConfig, StressConfig, PaperConfig
 
 os.makedirs("data/prepared", exist_ok=True)
 
 # Choose the configuration
-Config = HalfConfig
+Config = PaperConfig
 
 
 def prepare_and_train():
