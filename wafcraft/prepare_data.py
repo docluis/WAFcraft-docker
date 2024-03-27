@@ -40,7 +40,7 @@ from config import BaseConfig, HalfConfig, StressConfig
 os.makedirs("data/prepared", exist_ok=True)
 
 # Choose the configuration
-Config = BaseConfig
+Config = HalfConfig
 
 
 def prepare_and_train():

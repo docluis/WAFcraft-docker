@@ -72,5 +72,28 @@ class HalfConfig:
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
     RULE_IDS = get_rules_list()
     BATCH_SIZE = 10
-    MAX_PROCESSES = 8
+    MAX_PROCESSES = 20
+    DESIRED_FPR = 0.01
+
+class PaperConfig:
+    DESCRIPTION = "full data set size from paper"
+    ATTACK_DATA_PATH = "data/raw/attacks_full.sql"
+    SANE_DATA_PATH = "data/raw/sanes_full.sql"
+    TRAIN_ATTACKS_SIZE = 10000
+    TRAIN_SANES_SIZE = 10000
+    TEST_ATTACKS_SIZE = 2000
+    TEST_SANES_SIZE = 2000
+    TRAIN_ADV_SIZE = 5000
+    TEST_ADV_SIZE = 2000
+    ENGINE_SETTINGS = {
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 30, # paper unclear about this
+    }
+    PARANOIA_LEVEL = 4
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    RULE_IDS = get_rules_list()
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 20
     DESIRED_FPR = 0.01

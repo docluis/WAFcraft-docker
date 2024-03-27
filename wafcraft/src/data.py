@@ -46,6 +46,11 @@ def prepare_batches_for_addvec(
         test_size=test_sanes_size,
         stratify=sanes["label"],
     )
+
+    log(f"head of train_attacks:\n{train_attacks.head()}", 2)
+    log(f"head of test_attacks:\n{test_attacks.head()}", 2)
+    log(f"head of train_sanes:\n{train_sanes.head()}", 2)
+    log(f"head of test_sanes:\n{test_sanes.head()}", 2)
     train = (
         pd.concat([train_attacks, train_sanes]).sample(frac=1).reset_index(drop=True)
     )
