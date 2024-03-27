@@ -29,8 +29,8 @@ from src.utils import (
 )
 from src.data import (
     create_train_test_split,
-    optimize_data_in_todo,
-    prepare_batches_to_todo,
+    optimize_batches_in_todo,
+    prepare_batches_for_optimization,
 )
 from src.model import train_model
 
@@ -47,6 +47,7 @@ def prepare_and_train():
     data_path = f"data/prepared/{ts}"
     os.makedirs(data_path, exist_ok=True)
     os.makedirs(f"{data_path}/tmp", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec", exist_ok=True)
     log("Starting data preparation", 2)
     log(f"Using Config:\n{get_config_string(Config)}", 2)
 
@@ -77,7 +78,7 @@ def prepare_and_train():
         f.write(str(threshold))
 
     # 4. prepare batches for optimization and save them in {data_path}/tmp/todo
-    prepare_batches_to_todo(
+    prepare_batches_for_optimization(
         train=train,
         test=test,
         train_adv_size=Config.TRAIN_ADV_SIZE,
@@ -93,13 +94,12 @@ def prepare_and_train():
     log(f"Saved to {data_path}", 2)
 
 
-# main
 def optimize_data(data_path):
     # 1. load model
     model_trained = joblib.load(f"{data_path}/model.joblib")
 
     # 2. optimize
-    train_adv, test_adv = optimize_data_in_todo(
+    train_adv, test_adv = optimize_batches_in_todo(
         model_trained=model_trained,
         engine_settings=Config.ENGINE_SETTINGS,
         rule_ids=Config.RULE_IDS,
