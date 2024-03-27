@@ -101,6 +101,11 @@ def read_and_parse_sql(file_path):
 
         return pd.DataFrame(parsed_data)
 
+def split_in_batches(data, batch_size, data_path_tmp, label):
+    data_batches = [data[i : i + batch_size] for i in range(0, len(data), batch_size)]
+    for i, batch in enumerate(data_batches):
+        batch.to_csv(f"{data_path_tmp}/todo/{label}_{i}.csv", index=False, header=True)
+
 def plot_cm(cm):
     plt.figure(figsize=(4, 3))
     sns.heatmap(

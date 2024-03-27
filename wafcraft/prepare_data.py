@@ -50,6 +50,14 @@ def prepare_and_train():
     os.makedirs(f"{data_path}/tmp_optimize", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec_after_optimize", exist_ok=True)
+
+    os.makedirs(f"{data_path}/tmp_addvec/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec/addedvec", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_optimize/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_optimize/optimized", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec_after_optimize/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec_after_optimize/addedvec", exist_ok=True)
+
     log("Starting data preparation", 2)
     log(f"Using Config:\n{get_config_string(Config)}", 2)
 
@@ -57,7 +65,7 @@ def prepare_and_train():
     with open(f"{data_path}/config.txt", "w") as f:
         f.write(get_config_string(Config))
 
-    # 2. create train and test sets and save them
+    # 2. read and parse data, split into train and test, split into batches
     prepare_batches_for_addvec(
         attack_file=Config.ATTACK_DATA_PATH,
         sane_file=Config.SANE_DATA_PATH,
@@ -68,19 +76,18 @@ def prepare_and_train():
         data_path=data_path,
         batch_size=Config.BATCH_SIZE,
     )
+    # 3. add vectors to batches, concatenate them and save them to disk
     train, test = addvec_batches_in_data_path_tmp(
         data_path_tmp=f"{data_path}/tmp_addvec",
         rule_ids=Config.RULE_IDS,
         paranoia_level=Config.PARANOIA_LEVEL,
         max_processes=Config.MAX_PROCESSES,
     )
-    
     train.to_csv(f"{data_path}/train.csv", index=False)
     test.to_csv(f"{data_path}/test.csv", index=False)
-
     shutil.rmtree(f"{data_path}/tmp_addvec")
 
-    # 3. train model and save it
+    # 4. train model and save it
     model_trained, threshold = train_model(
         train=train, test=test, model=Config.MODEL, desired_fpr=Config.DESIRED_FPR
     )
@@ -88,7 +95,7 @@ def prepare_and_train():
     with open(f"{data_path}/threshold.txt", "w") as f:
         f.write(str(threshold))
 
-    # 4. prepare batches for optimization and save them in {data_path}/tmp/todo
+    # 5. choose payloads for train_adv and test_adv and split them into batches
     prepare_batches_for_optimization(
         train=train,
         test=test,
@@ -109,7 +116,7 @@ def optimize_data(data_path):
     # 1. load model
     model_trained = joblib.load(f"{data_path}/model.joblib")
 
-    # 2. optimize
+    # 2. optimize, add vectors and save to disk
     train_adv, test_adv = optimize_batches_in_todo(
         model_trained=model_trained,
         engine_settings=Config.ENGINE_SETTINGS,
