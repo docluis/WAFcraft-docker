@@ -1,10 +1,9 @@
 import base64
 import contextlib
-import io
 import os
 import multiprocessing
 
-import sqlparse
+import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
@@ -12,15 +11,15 @@ from sklearn.model_selection import train_test_split
 from wafamole.evasion import EvasionEngine  # type: ignore
 from src.modsec import init_modsec
 from src.model import create_wafamole_model, payload_to_vec
-from src.utils import load_and_concat_csv, log, read_and_parse_sql
+from src.utils import log, read_and_parse_sql
 
 
 wafamole_log = "logs/wafamole_log.txt"
 
 
-def add_vec(data_path, file_name, rule_ids, paranoia_level):
+def add_vec(data_path_tmp, file_name, rule_ids, paranoia_level):
     modsec = init_modsec()
-    data_set = pd.read_csv(f"{data_path}/tmp_addvec/todo/{file_name}")
+    data_set = pd.read_csv(f"{data_path_tmp}/todo/{file_name}")
 
     tqdm.pandas(desc="Processing payloads")
     data_set["vector"] = data_set["data"].progress_apply(
@@ -28,7 +27,7 @@ def add_vec(data_path, file_name, rule_ids, paranoia_level):
     )
 
     data_set.to_csv(
-        f"{data_path}/tmp_addvec/optimized/{file_name}",
+        f"{data_path_tmp}/addedvec/{file_name}",
         mode="a",
         index=False,
         header=False,
@@ -42,8 +41,6 @@ def prepare_batches_for_addvec(
     train_sanes_size,
     test_attacks_size,
     test_sanes_size,
-    rule_ids,
-    paranoia_level,
     data_path,
     batch_size,
 ):
@@ -74,26 +71,36 @@ def prepare_batches_for_addvec(
     os.makedirs(f"{data_path}/tmp_addvec/todo", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec/addedvec", exist_ok=True)
 
-    # split in batches
+    # split in batches on disk
 
-    train_batches = [
-        train[i : i + batch_size] for i in range(0, len(train), batch_size)
-    ]
-    test_batches = [test[i : i + batch_size] for i in range(0, len(test), batch_size)]
-    for i, batch in enumerate(train_batches):
-        batch.to_csv(
-            f"{data_path}/tmp_addvec/todo/train_{i}.csv", index=False, header=True
+    split_in_batches(train, batch_size, f"{data_path}/tmp_addvec", "train")
+    split_in_batches(test, batch_size, f"{data_path}/tmp_addvec", "test")
+
+
+def split_in_batches(data, batch_size, data_path_tmp, label):
+    data_batches = [data[i : i + batch_size] for i in range(0, len(data), batch_size)]
+    for i, batch in enumerate(data_batches):
+        batch.to_csv(f"{data_path_tmp}/todo/{label}_{i}.csv", index=False, header=True)
+
+
+def addvec_batches_in_data_path_tmp(
+    data_path_tmp, rule_ids, paranoia_level, max_processes
+):
+    def load_and_concat_addedvec_batches(files):
+        data = pd.concat(
+            [
+                pd.read_csv(
+                    f"{data_path_tmp}/addedvec/{file}",
+                    names=["data", "label", "vector"],
+                    header=None,
+                )
+                for file in files
+            ]
         )
-    for i, batch in enumerate(test_batches):
-        batch.to_csv(
-            f"{data_path}/tmp_addvec/todo/test_{i}.csv", index=False, header=True
-        )
+        data["vector"] = data["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
+        return data
 
-
-def addvec_batches_in_todo(data_path, rule_ids, paranoia_level, max_processes):
-    # load all files in data_path/tmp_addvec/todo
-
-    todo_files_all = os.listdir(f"{data_path}/tmp/tmp_addvec")
+    todo_files_all = os.listdir(f"{data_path_tmp}/todo")
     log(f"addvec {len(todo_files_all)} batches...", 2)
 
     # addvec for all batches parallel
@@ -102,7 +109,7 @@ def addvec_batches_in_todo(data_path, rule_ids, paranoia_level, max_processes):
             add_vec,
             [
                 (
-                    data_path,
+                    data_path_tmp,
                     file,
                     rule_ids,
                     paranoia_level,
@@ -111,15 +118,15 @@ def addvec_batches_in_todo(data_path, rule_ids, paranoia_level, max_processes):
             ],
         )
 
-    # concat and delete temporary dir
+    # concat
     addvec_files_train = [
         file
-        for file in os.listdir(f"{data_path}/tmp_addvec/addedvec")
+        for file in os.listdir(f"{data_path_tmp}/addedvec")
         if "train" in file
     ]
     addvec_files_test = [
         file
-        for file in os.listdir(f"{data_path}/tmp_addvec/addedvec")
+        for file in os.listdir(f"{data_path_tmp}/addedvec")
         if "test" in file
     ]
 
@@ -128,8 +135,8 @@ def addvec_batches_in_todo(data_path, rule_ids, paranoia_level, max_processes):
         2,
     )
 
-    train = load_and_concat_csv(addvec_files_train)
-    test = load_and_concat_csv(addvec_files_test)
+    train = load_and_concat_addedvec_batches(addvec_files_train)
+    test = load_and_concat_addedvec_batches(addvec_files_test)
 
     # return test, train
     return train, test
@@ -144,7 +151,7 @@ def prepare_batches_for_optimization(
     data_path,
 ):
     """
-    Prepares batches for optimization and saves them in data_path/tmp/todo
+    Prepares batches for optimization and saves them in data_path/tmp_optimize/todo
 
     Parameters:
         train (pd.DataFrame): Train dataframe
@@ -156,8 +163,11 @@ def prepare_batches_for_optimization(
 
     """
     # create directories
-    os.makedirs(f"{data_path}/tmp/todo", exist_ok=True)
-    os.makedirs(f"{data_path}/tmp/optimized", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_optimize/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_optimize/optimized", exist_ok=True)
+
+    os.makedirs(f"{data_path}/tmp_addvec_after_optimize/todo", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec_after_optimize/addedvec", exist_ok=True)
 
     # Sample train and test dataframes, only use attack payloads
     train_adv = (
@@ -165,20 +175,8 @@ def prepare_batches_for_optimization(
     )
     test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
 
-    train_adv_batches = [
-        train_adv[i : i + batch_size] for i in range(0, len(train_adv), batch_size)
-    ]
-    test_adv_batches = [
-        test_adv[i : i + batch_size] for i in range(0, len(test_adv), batch_size)
-    ]
-
-    # Save each batch to a csv in data_path/tmp/todo
-    for i, batch in enumerate(train_adv_batches):
-        batch.to_csv(
-            f"{data_path}/tmp/todo/train_adv_{i}.csv", index=False, header=True
-        )
-    for i, batch in enumerate(test_adv_batches):
-        batch.to_csv(f"{data_path}/tmp/todo/test_adv_{i}.csv", index=False, header=True)
+    split_in_batches(train_adv, batch_size, f"{data_path}/tmp_optimize", "train")
+    split_in_batches(test_adv, batch_size, f"{data_path}/tmp_optimize", "test")
 
 
 def optimize(
@@ -190,8 +188,8 @@ def optimize(
     paranoia_level,
 ):
     """
-    Optimizes payloads in data_path/tmp/todo/{label}_adv_{batch_number}.csv
-    Data is saved to data_path/tmp/optimized/{label}_adv_{batch_number}.csv
+    Optimizes payloads in data_path/tmp_optimize/todo/{label}_adv_{batch_number}.csv
+    Data is saved to data_path/tmp_optimize/optimized/{label}_adv_{batch_number}.csv
 
     Parameters:
         data_path (str): Path to the data directory
@@ -206,7 +204,7 @@ def optimize(
     wafamole_model = create_wafamole_model(
         model_trained, modsec, rule_ids, paranoia_level
     )
-    data_set = pd.read_csv(f"{data_path}/tmp/todo/{file_name}")
+    data_set = pd.read_csv(f"{data_path}/tmp_optimize/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
     with open(wafamole_log, "a") as f:
         for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
@@ -230,12 +228,12 @@ def optimize(
                     log(f"min_payload not None: {min_payload}")
                 continue
     data_set.to_csv(
-        f"{data_path}/tmp/optimized/{file_name}",
+        f"{data_path}/tmp_optimize/optimized/{file_name}",
         mode="a",
         index=False,
         header=False,
     )
-    os.remove(f"{data_path}/tmp/todo/{file_name}")
+    os.remove(f"{data_path}/tmp_optimize/todo/{file_name}")
     log(f"{file_name} done!", 1)
 
 
@@ -246,9 +244,10 @@ def optimize_batches_in_todo(
     paranoia_level,
     max_processes,
     data_path,
+    batch_size,
 ):
     """
-    Reads batches from data_path/tmp/todo and optimizes them using the trained model and engine settings
+    Reads batches from data_path/tmp_optimize/todo and optimizes them using the trained model and engine settings
 
     Parameters:
         model_trained (sklearn.base.BaseEstimator): Trained model
@@ -262,8 +261,20 @@ def optimize_batches_in_todo(
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
 
-    # get all filenames in data_path/tmp/todo
-    todo_files_all = os.listdir(f"{data_path}/tmp/todo")
+    def load_and_concat_optimized_batches(files):
+        return pd.concat(
+            [
+                pd.read_csv(
+                    f"{data_path}/tmp_optimize/optimized/{file}",
+                    names=["data", "label"],
+                    header=None,
+                )
+                for file in files
+            ]
+        )
+
+    # get all filenames in data_path/tmp_optimize/todo
+    todo_files_all = os.listdir(f"{data_path}/tmp_optimize/todo")
 
     log(f"optimizing {len(todo_files_all)} batches...", 2)
 
@@ -286,10 +297,10 @@ def optimize_batches_in_todo(
 
     # Read and concatenate optimized train
     optimized_files_train = [
-        file for file in os.listdir(f"{data_path}/tmp/optimized") if "train" in file
+        file for file in os.listdir(f"{data_path}/tmp_optimize/optimized") if "train" in file
     ]
     optimized_files_test = [
-        file for file in os.listdir(f"{data_path}/tmp/optimized") if "test" in file
+        file for file in os.listdir(f"{data_path}/tmp_optimize/optimized") if "test" in file
     ]
 
     log(
@@ -297,13 +308,19 @@ def optimize_batches_in_todo(
         2,
     )
 
-    train_adv = load_and_concat_csv(optimized_files_train, data_path)
-    test_adv = load_and_concat_csv(optimized_files_test, data_path)
+    train_adv = load_and_concat_optimized_batches(optimized_files_train)
+    test_adv = load_and_concat_optimized_batches(optimized_files_test)
 
     # Add vector for payloads in train and test
     log("adding vectors...", 2)
-    modsec = init_modsec()
-    train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
-    test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
+    # modsec = init_modsec()
+    # train_adv = add_vec(train_adv, rule_ids, modsec, paranoia_level)
+    # test_adv = add_vec(test_adv, rule_ids, modsec, paranoia_level)
+    split_in_batches(train_adv, batch_size, f"{data_path}/tmp_addvec_after_optimize", "train_adv")
+    split_in_batches(test_adv, batch_size, f"{data_path}/tmp_addvec_after_optimize", "test_adv")
+
+    train_adv, test_adv = addvec_batches_in_data_path_tmp(
+        f"{data_path}/tmp_addvec_after_optimize", rule_ids, paranoia_level, max_processes
+    )
 
     return train_adv, test_adv

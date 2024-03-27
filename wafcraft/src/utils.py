@@ -101,18 +101,6 @@ def read_and_parse_sql(file_path):
 
         return pd.DataFrame(parsed_data)
 
-def load_and_concat_csv(files, data_path):
-        return pd.concat(
-            [
-                pd.read_csv(
-                    f"{data_path}/tmp/optimized/{file}",
-                    names=["data", "label"],
-                    header=None,
-                )
-                for file in files
-            ]
-        )
-
 def plot_cm(cm):
     plt.figure(figsize=(4, 3))
     sns.heatmap(
@@ -167,14 +155,3 @@ def plot_precision_recall_curve(y_test, probabilities):
     plt.legend()
     plt.grid(True)
     plt.show()
-def load_and_concat_csv(files):
-        return pd.concat(
-            [
-                pd.read_csv(
-                    f"{data_path}/tmp/optimized/{file}",
-                    names=["data", "label"],
-                    header=None,
-                )
-                for file in files
-            ]
-        )

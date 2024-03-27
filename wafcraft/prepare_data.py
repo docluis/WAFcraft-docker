@@ -28,8 +28,9 @@ from src.utils import (
     log,
 )
 from src.data import (
-    create_train_test_split,
+    addvec_batches_in_data_path_tmp,
     optimize_batches_in_todo,
+    prepare_batches_for_addvec,
     prepare_batches_for_optimization,
 )
 from src.model import train_model
@@ -39,15 +40,16 @@ from config import BaseConfig, HalfConfig, StressConfig
 os.makedirs("data/prepared", exist_ok=True)
 
 # Choose the configuration
-Config = HalfConfig
+Config = BaseConfig
 
 
 def prepare_and_train():
     ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     data_path = f"data/prepared/{ts}"
     os.makedirs(data_path, exist_ok=True)
-    os.makedirs(f"{data_path}/tmp", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_optimize", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec", exist_ok=True)
+    os.makedirs(f"{data_path}/tmp_addvec_after_optimize", exist_ok=True)
     log("Starting data preparation", 2)
     log(f"Using Config:\n{get_config_string(Config)}", 2)
 
@@ -56,18 +58,27 @@ def prepare_and_train():
         f.write(get_config_string(Config))
 
     # 2. create train and test sets and save them
-    train, test = create_train_test_split(
+    prepare_batches_for_addvec(
         attack_file=Config.ATTACK_DATA_PATH,
         sane_file=Config.SANE_DATA_PATH,
         train_attacks_size=Config.TRAIN_ATTACKS_SIZE,
         train_sanes_size=Config.TRAIN_SANES_SIZE,
         test_attacks_size=Config.TEST_ATTACKS_SIZE,
         test_sanes_size=Config.TEST_SANES_SIZE,
+        data_path=data_path,
+        batch_size=Config.BATCH_SIZE,
+    )
+    train, test = addvec_batches_in_data_path_tmp(
+        data_path_tmp=f"{data_path}/tmp_addvec",
         rule_ids=Config.RULE_IDS,
         paranoia_level=Config.PARANOIA_LEVEL,
+        max_processes=Config.MAX_PROCESSES,
     )
+    
     train.to_csv(f"{data_path}/train.csv", index=False)
     test.to_csv(f"{data_path}/test.csv", index=False)
+
+    shutil.rmtree(f"{data_path}/tmp_addvec")
 
     # 3. train model and save it
     model_trained, threshold = train_model(
@@ -106,12 +117,14 @@ def optimize_data(data_path):
         paranoia_level=Config.PARANOIA_LEVEL,
         max_processes=Config.MAX_PROCESSES,
         data_path=data_path,
+        batch_size=Config.BATCH_SIZE,
     )
 
     train_adv.to_csv(f"{data_path}/train_adv.csv", index=False)
     test_adv.to_csv(f"{data_path}/test_adv.csv", index=False)
     # delete tmp files
-    shutil.rmtree(f"{data_path}/tmp")
+    shutil.rmtree(f"{data_path}/tmp_optimize")
+    shutil.rmtree(f"{data_path}/tmp_addvec_after_optimize")
 
     log(
         f"Optimization completed. train_adv: {train_adv.shape[0]} test_adv: {test_adv.shape[0]}",
