@@ -88,7 +88,7 @@ class PaperConfig:
     ENGINE_SETTINGS = {
         "max_rounds": 200,
         "round_size": 10,
-        "timeout": 30, # paper unclear about this
+        "timeout": 2, # paper unclear about this
     }
     PARANOIA_LEVEL = 4
     MODEL = RandomForestClassifier(n_estimators=160, random_state=666)

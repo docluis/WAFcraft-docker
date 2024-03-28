@@ -51,7 +51,8 @@ RUN pip install pybind11 \
     Click \
     tensorflow \
     matplotlib \
-    seaborn
+    seaborn \
+    faker
 
 # Copy and install pymodsecurity
 COPY pymodsecurity /app/pymodsecurity

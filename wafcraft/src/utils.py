@@ -8,6 +8,7 @@ import seaborn as sns
 import glob
 import pandas as pd
 
+from faker import Faker
 from sklearn.metrics import precision_recall_curve
 import sqlparse
 
@@ -31,6 +32,17 @@ def log(message, level=1):
                 )
             except Exception as e:
                 print(f"Not able to notify: {e}")
+
+
+def generate_codename():
+    """
+    Generates a codename using the faker library. Used to distinguish different data sets.
+
+    Returns:
+        str: Codename
+    """
+    faker = Faker()
+    return f"{faker.color_name().lower()}-{faker.word().lower()}"
 
 
 def get_config_string(Config):
@@ -88,23 +100,24 @@ def get_most_recent_data_path():
     except ValueError:
         return None
 
+
 def read_and_parse_sql(file_path):
-        content = open(file_path, "r").read()
-        statements = sqlparse.split(content)
+    content = open(file_path, "r").read()
+    statements = sqlparse.split(content)
 
-        parsed_data = []
-        for statement in statements:
-            base64_statement = base64.b64encode(statement.encode("utf-8")).decode(
-                "utf-8"
-            )
-            parsed_data.append({"data": base64_statement})
+    parsed_data = []
+    for statement in statements:
+        base64_statement = base64.b64encode(statement.encode("utf-8")).decode("utf-8")
+        parsed_data.append({"data": base64_statement})
 
-        return pd.DataFrame(parsed_data)
+    return pd.DataFrame(parsed_data)
+
 
 def split_in_batches(data, batch_size, data_path_tmp, label):
     data_batches = [data[i : i + batch_size] for i in range(0, len(data), batch_size)]
     for i, batch in enumerate(data_batches):
         batch.to_csv(f"{data_path_tmp}/todo/{label}_{i}.csv", index=False, header=True)
+
 
 def plot_cm(cm):
     plt.figure(figsize=(4, 3))

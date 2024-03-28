@@ -23,6 +23,7 @@ import argparse
 
 import joblib
 from src.utils import (
+    generate_codename,
     get_config_string,
     get_most_recent_data_path,
     log,
@@ -44,8 +45,10 @@ Config = PaperConfig
 
 
 def prepare_and_train():
-    ts = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    data_path = f"data/prepared/{ts}"
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    codename = generate_codename()
+    data_path = f"data/prepared/{ts} {codename}"
+
     os.makedirs(data_path, exist_ok=True)
     os.makedirs(f"{data_path}/tmp_optimize", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec", exist_ok=True)
@@ -58,7 +61,10 @@ def prepare_and_train():
     os.makedirs(f"{data_path}/tmp_addvec_after_optimize/todo", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec_after_optimize/addedvec", exist_ok=True)
 
+    log(f"------------------------------------------------", 2)
     log("Starting data preparation", 2)
+    log(f"Timestamp: {ts}", 2)
+    log(f"Codename: {codename}", 2)
     log(f"Using Config:\n{get_config_string(Config)}", 2)
 
     # 1. save config
