@@ -22,7 +22,7 @@ os.makedirs("/app/wafcraft/logs", exist_ok=True)
 def log(message, level=1):
     time = pd.Timestamp.now()
     with open(log_path, "a") as log_file:
-        log_file.write(f"{time}: {message}\n")
+        log_file.write(f"[{time}] {message}\n")
     if level >= 2:
         print(message)
         if level >= 3:

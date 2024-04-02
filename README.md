@@ -32,6 +32,7 @@ python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 cd wafcraft
 python prepare_data.py --mode prepare
 python prepare_data.py --mode optimize
+python prepare_data.py --mode prepare && python prepare_data.py --mode optimize || curl -d "`hostname`: something went wrong :/" ntfy.sh/luis-info-buysvauy12iiq
 # then run the Notebook
 ```
 > Access the **Jupyter Notebooks** via: http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT

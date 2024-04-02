@@ -75,6 +75,7 @@ class HalfConfig:
     MAX_PROCESSES = 20
     DESIRED_FPR = 0.01
 
+
 class PaperConfig:
     DESCRIPTION = "full data set size from paper"
     ATTACK_DATA_PATH = "data/raw/attacks_full.sql"
@@ -85,10 +86,11 @@ class PaperConfig:
     TEST_SANES_SIZE = 2000
     TRAIN_ADV_SIZE = 5000
     TEST_ADV_SIZE = 2000
-    ENGINE_SETTINGS = {
+    ENGINE_SETTINGS = {  # paper unclear about these settings
         "max_rounds": 200,
         "round_size": 10,
-        "timeout": 2, # paper unclear about this
+        "timeout": 15,
+        "threshold": 0.0,  # just go as far as possible
     }
     PARANOIA_LEVEL = 4
     MODEL = RandomForestClassifier(n_estimators=160, random_state=666)

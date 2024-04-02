@@ -40,11 +40,8 @@ from config import BaseConfig, HalfConfig, StressConfig, PaperConfig
 
 os.makedirs("data/prepared", exist_ok=True)
 
-# Choose the configuration
-Config = PaperConfig
 
-
-def prepare_and_train():
+def prepare_and_train(Config, data_overlap_path, data_overlap):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
     codename = generate_codename()
     data_path = f"data/prepared/{ts} {codename}"
@@ -81,6 +78,8 @@ def prepare_and_train():
         test_sanes_size=Config.TEST_SANES_SIZE,
         data_path=data_path,
         batch_size=Config.BATCH_SIZE,
+        data_overlap_path=data_overlap_path,
+        data_overlap=data_overlap,
     )
     # 3. add vectors to batches, concatenate them and save them to disk
     train, test = addvec_batches_in_data_path_tmp(
@@ -91,7 +90,7 @@ def prepare_and_train():
     )
     train.to_csv(f"{data_path}/train.csv", index=False)
     test.to_csv(f"{data_path}/test.csv", index=False)
-    shutil.rmtree(f"{data_path}/tmp_addvec")
+    # shutil.rmtree(f"{data_path}/tmp_addvec")
 
     # 4. train model and save it
     model_trained, threshold = train_model(
@@ -118,7 +117,7 @@ def prepare_and_train():
     log(f"Saved to {data_path}", 2)
 
 
-def optimize_data(data_path):
+def optimize_data(Config, data_path):
     # 1. load model
     model_trained = joblib.load(f"{data_path}/model.joblib")
 
@@ -147,6 +146,8 @@ def optimize_data(data_path):
 
 
 if __name__ == "__main__":
+    most_recent_data_path = get_most_recent_data_path()
+
     parser = argparse.ArgumentParser(
         description="Run data preparation and model training or optimization"
     )
@@ -156,8 +157,12 @@ if __name__ == "__main__":
         required=True,
         help="Choose whether to prepare and train model or to optimize data.",
     )
-
-    most_recent_data_path = get_most_recent_data_path()
+    parser.add_argument(
+        "--config",
+        choices=["base", "half", "stress", "paper"],
+        help="Choose the configuration to use.",
+        required=True,
+    )
     parser.add_argument(
         "--data_path",
         type=str,
@@ -165,11 +170,37 @@ if __name__ == "__main__":
         default=most_recent_data_path,
     )
 
+    parser.add_argument(
+        "--data_overlap_path",
+        type=str,
+        help="Path to the overlaping data directory.",
+        default=most_recent_data_path,
+    )
+
+    parser.add_argument(
+        "--data_overlap",
+        type=float,
+        help="Percentage of data to overlap.",
+        default=None,
+
+    )    
     args = parser.parse_args()
 
+    # Set config based on the argument
+    if args.config == "base":
+        Config = BaseConfig
+    elif args.config == "half":
+        Config = HalfConfig
+    elif args.config == "stress":
+        Config = StressConfig
+    elif args.config == "paper":
+        Config = PaperConfig
+    else:
+        raise ValueError("Invalid config")
+
     if args.mode == "prepare":
-        prepare_and_train()
+        prepare_and_train(Config, args.data_overlap_path, args.data_overlap)
     elif args.mode == "optimize":
-        optimize_data(args.data_path)
+        optimize_data(Config, args.data_path)
     else:
         raise ValueError("Invalid mode")

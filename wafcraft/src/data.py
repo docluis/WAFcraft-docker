@@ -11,10 +11,86 @@ from sklearn.model_selection import train_test_split
 from wafamole.evasion import EvasionEngine  # type: ignore
 from src.modsec import init_modsec
 from src.model import create_wafamole_model, payload_to_vec
-from src.utils import log, read_and_parse_sql, split_in_batches
+from src.utils import load_data_label_vector, log, read_and_parse_sql, split_in_batches
 
 
 wafamole_log = "logs/wafamole_log.txt"
+
+
+def create_overlapping_dataset(A, B, C_size, data_overlap):
+    shared_size = int(C_size * data_overlap)
+    unique_size = C_size - shared_size
+
+    shared = B.sample(shared_size)
+    unique = A[~A["data"].isin(B["data"])].sample(unique_size)
+
+    return pd.concat([shared, unique], ignore_index=True).sample(frac=1)
+
+
+def choose_train_test_payloads(
+    attack_file,
+    sane_file,
+    train_attacks_size,
+    train_sanes_size,
+    test_attacks_size,
+    test_sanes_size,
+    data_overlap_path,
+    data_overlap,
+):
+    log("reading and parsing raw sql files...", 2)
+    attacks = read_and_parse_sql(attack_file)
+    attacks["label"] = 1
+    sanes = read_and_parse_sql(sane_file)
+    sanes["label"] = 0
+
+    log("splitting data into train and test...", 2)
+    if data_overlap is not None:
+        log(f"with overlap {data_overlap} from {data_overlap_path}", 2)
+        # load the data from from the previous
+        base_train = load_data_label_vector(f"{data_overlap_path}/train.csv")
+        base_test = load_data_label_vector(f"{data_overlap_path}/test.csv")
+        # drop vector column
+        base_train = base_train.drop(columns=["vector"])
+        base_test = base_test.drop(columns=["vector"])
+        # now split into base_train_attacks, base_train_sanes, base_test_attacks, base_test_sanes
+        base_train_attacks = base_train[base_train["label"] == 1]
+        base_train_sanes = base_train[base_train["label"] == 0]
+        base_test_attacks = base_test[base_test["label"] == 1]
+        base_test_sanes = base_test[base_test["label"] == 0]
+
+        train_attacks = create_overlapping_dataset(
+            attacks, base_train_attacks, train_attacks_size, data_overlap
+        )
+        train_sanes = create_overlapping_dataset(
+            sanes, base_train_sanes, train_sanes_size, data_overlap
+        )
+        test_attacks = create_overlapping_dataset(
+            attacks, base_test_attacks, test_attacks_size, data_overlap
+        )
+        test_sanes = create_overlapping_dataset(
+            sanes, base_test_sanes, test_sanes_size, data_overlap
+        )
+    else:
+        log("without overlap...", 2)
+        train_attacks, test_attacks = train_test_split(
+            attacks,
+            train_size=train_attacks_size,
+            test_size=test_attacks_size,
+            stratify=attacks["label"],
+        )
+        train_sanes, test_sanes = train_test_split(
+            sanes,
+            train_size=train_sanes_size,
+            test_size=test_sanes_size,
+            stratify=sanes["label"],
+        )
+
+    train = (
+        pd.concat([train_attacks, train_sanes]).sample(frac=1).reset_index(drop=True)
+    )
+    test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
+
+    return train, test
 
 
 def prepare_batches_for_addvec(
@@ -26,35 +102,19 @@ def prepare_batches_for_addvec(
     test_sanes_size,
     data_path,
     batch_size,
+    data_overlap_path,
+    data_overlap,
 ):
-    log("reading and parsing raw sql files...", 2)
-    attacks = read_and_parse_sql(attack_file)
-    attacks["label"] = 1
-    sanes = read_and_parse_sql(sane_file)
-    sanes["label"] = 0
-
-    log("splitting data into train and test sets...", 2)
-    train_attacks, test_attacks = train_test_split(
-        attacks,
-        train_size=train_attacks_size,
-        test_size=test_attacks_size,
-        stratify=attacks["label"],
+    train, test = choose_train_test_payloads(
+        attack_file=attack_file,
+        sane_file=sane_file,
+        train_attacks_size=train_attacks_size,
+        train_sanes_size=train_sanes_size,
+        test_attacks_size=test_attacks_size,
+        test_sanes_size=test_sanes_size,
+        data_overlap_path=data_overlap_path,
+        data_overlap=data_overlap,
     )
-    train_sanes, test_sanes = train_test_split(
-        sanes,
-        train_size=train_sanes_size,
-        test_size=test_sanes_size,
-        stratify=sanes["label"],
-    )
-
-    log(f"head of train_attacks:\n{train_attacks.head()}", 2)
-    log(f"head of test_attacks:\n{test_attacks.head()}", 2)
-    log(f"head of train_sanes:\n{train_sanes.head()}", 2)
-    log(f"head of test_sanes:\n{test_sanes.head()}", 2)
-    train = (
-        pd.concat([train_attacks, train_sanes]).sample(frac=1).reset_index(drop=True)
-    )
-    test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
 
     log("splitting data into batches...", 2)
 
