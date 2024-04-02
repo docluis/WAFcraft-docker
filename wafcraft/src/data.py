@@ -20,11 +20,17 @@ wafamole_log = "logs/wafamole_log.txt"
 def create_overlapping_dataset(A, B, C_size, data_overlap):
     shared_size = int(C_size * data_overlap)
     unique_size = C_size - shared_size
+    log(f"shared_size: {shared_size}, unique_size: {unique_size}", 2)
 
     shared = B.sample(shared_size)
-    unique = A[~A["data"].isin(B["data"])].sample(unique_size)
 
-    return pd.concat([shared, unique], ignore_index=True).sample(frac=1)
+    unique_candidates = A[~A["data"].isin(B["data"])]
+    if len(unique_candidates) < unique_size:
+        # create an exception here
+        raise Exception(f"unique_candidates too small!")
+    else:
+        unique = unique_candidates.sample(unique_size, replace=False)
+        return pd.concat([shared, unique], ignore_index=True).sample(frac=1)
 
 
 def choose_train_test_payloads(
