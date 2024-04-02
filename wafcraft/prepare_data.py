@@ -63,10 +63,15 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
     log(f"Timestamp: {ts}", 2)
     log(f"Codename: {codename}", 2)
     log(f"Using Config:\n{get_config_string(Config)}", 2)
+    if data_overlap is not None:
+        log(f"overlap with {data_overlap_path} of {str(data_overlap * 100)}%", 2)
 
     # 1. save config
     with open(f"{data_path}/config.txt", "w") as f:
         f.write(get_config_string(Config))
+    if data_overlap is not None:
+        with open(f"{data_path}/overlap.txt", "w") as f:
+            f.write(f"overlap with {data_overlap_path} of {str(data_overlap * 100)}%\n")
 
     # 2. read and parse data, split into train and test, split into batches
     prepare_batches_for_addvec(
@@ -182,8 +187,7 @@ if __name__ == "__main__":
         type=float,
         help="Percentage of data to overlap.",
         default=None,
-
-    )    
+    )
     args = parser.parse_args()
 
     # Set config based on the argument
