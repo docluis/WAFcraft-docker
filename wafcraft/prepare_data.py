@@ -95,7 +95,7 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
     )
     train.to_csv(f"{data_path}/train.csv", index=False)
     test.to_csv(f"{data_path}/test.csv", index=False)
-    # shutil.rmtree(f"{data_path}/tmp_addvec")
+    shutil.rmtree(f"{data_path}/tmp_addvec")
 
     # 4. train model and save it
     model_trained, threshold = train_model(

@@ -22,32 +22,43 @@ def create_overlapping_dataset(A, B, C_size, data_overlap):
     unique_size = C_size - shared_size
     log(f"shared_size: {shared_size}, unique_size: {unique_size}", 2)
 
-    shared = B.sample(shared_size)
+    shared = B.sample(shared_size, replace=False)
+    log(f"shared: {len(shared)}", 2)
 
     unique_candidates = A[~A["data"].isin(B["data"])]
+    # remove the ones that are already in shared
+    unique_candidates = unique_candidates[
+        ~unique_candidates["data"].isin(shared["data"])
+    ]
     if len(unique_candidates) < unique_size:
         # create an exception here
         raise Exception(f"unique_candidates too small!")
     else:
         unique = unique_candidates.sample(unique_size, replace=False)
+        log(f"unique: {len(unique)}", 2)
         return pd.concat([shared, unique], ignore_index=True).sample(frac=1)
 
 
-def choose_train_test_payloads(
+def prepare_batches_for_addvec(
     attack_file,
     sane_file,
     train_attacks_size,
     train_sanes_size,
     test_attacks_size,
     test_sanes_size,
+    data_path,
+    batch_size,
     data_overlap_path,
     data_overlap,
 ):
     log("reading and parsing raw sql files...", 2)
     attacks = read_and_parse_sql(attack_file)
     attacks["label"] = 1
+    attacks = attacks.drop_duplicates(subset=["data"])
+
     sanes = read_and_parse_sql(sane_file)
     sanes["label"] = 0
+    sanes = sanes.drop_duplicates(subset=["data"])
 
     log("splitting data into train and test...", 2)
     if data_overlap is not None:
@@ -95,32 +106,6 @@ def choose_train_test_payloads(
         pd.concat([train_attacks, train_sanes]).sample(frac=1).reset_index(drop=True)
     )
     test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
-
-    return train, test
-
-
-def prepare_batches_for_addvec(
-    attack_file,
-    sane_file,
-    train_attacks_size,
-    train_sanes_size,
-    test_attacks_size,
-    test_sanes_size,
-    data_path,
-    batch_size,
-    data_overlap_path,
-    data_overlap,
-):
-    train, test = choose_train_test_payloads(
-        attack_file=attack_file,
-        sane_file=sane_file,
-        train_attacks_size=train_attacks_size,
-        train_sanes_size=train_sanes_size,
-        test_attacks_size=test_attacks_size,
-        test_sanes_size=test_sanes_size,
-        data_overlap_path=data_overlap_path,
-        data_overlap=data_overlap,
-    )
 
     log("splitting data into batches...", 2)
 
