@@ -29,7 +29,8 @@ from src.utils import (
     log,
 )
 from src.data import (
-    addvec_batches_in_data_path_tmp,
+    addvec_batches_in_tmp_addvec_dir,
+    addvec_to_optmized_batches,
     optimize_batches_in_todo,
     prepare_batches_for_addvec,
     prepare_batches_for_optimization,
@@ -87,8 +88,8 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
         data_overlap=data_overlap,
     )
     # 3. add vectors to batches, concatenate them and save them to disk
-    train, test = addvec_batches_in_data_path_tmp(
-        data_path_tmp=f"{data_path}/tmp_addvec",
+    train, test = addvec_batches_in_tmp_addvec_dir(
+        tmp_addvec_dir=f"{data_path}/tmp_addvec",
         rule_ids=Config.RULE_IDS,
         paranoia_level=Config.PARANOIA_LEVEL,
         max_processes=Config.MAX_PROCESSES,
@@ -127,14 +128,23 @@ def optimize_data(Config, data_path):
     model_trained = joblib.load(f"{data_path}/model.joblib")
 
     # 2. optimize, add vectors and save to disk
-    train_adv, test_adv = optimize_batches_in_todo(
+    train_adv, test_adv, _ = optimize_batches_in_todo(
         model_trained=model_trained,
         engine_settings=Config.ENGINE_SETTINGS,
         rule_ids=Config.RULE_IDS,
         paranoia_level=Config.PARANOIA_LEVEL,
         max_processes=Config.MAX_PROCESSES,
         data_path=data_path,
+    )
+
+    train_adv, test_adv = addvec_to_optmized_batches(
+        train_adv=train_adv,
+        test_adv=test_adv,
         batch_size=Config.BATCH_SIZE,
+        data_path=data_path,
+        rule_ids=Config.RULE_IDS,
+        paranoia_level=Config.PARANOIA_LEVEL,
+        max_processes=Config.MAX_PROCESSES,
     )
 
     train_adv.to_csv(f"{data_path}/train_adv.csv", index=False)

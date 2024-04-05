@@ -109,14 +109,23 @@ def read_and_parse_sql(file_path):
     for statement in statements:
         base64_statement = base64.b64encode(statement.encode("utf-8")).decode("utf-8")
         parsed_data.append({"data": base64_statement})
-
-    return pd.DataFrame(parsed_data)
+    df = pd.DataFrame(parsed_data)
+    df = df.drop_duplicates()
+    return df
 
 
 def split_in_batches(data, batch_size, data_path_tmp, label):
     data_batches = [data[i : i + batch_size] for i in range(0, len(data), batch_size)]
     for i, batch in enumerate(data_batches):
         batch.to_csv(f"{data_path_tmp}/todo/{label}_{i}.csv", index=False, header=True)
+
+
+def load_and_concat_batches(directory, files):
+    if not files:
+        return None
+    else:
+        data = pd.concat([pd.read_csv(f"{directory}/{file}") for file in files])
+        return data
 
 
 def plot_cm(cm):

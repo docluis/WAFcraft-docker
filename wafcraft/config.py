@@ -24,7 +24,7 @@ class BaseConfig:
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
     RULE_IDS = get_rules_list()
     BATCH_SIZE = 10
-    MAX_PROCESSES = 4
+    MAX_PROCESSES = 8
     DESIRED_FPR = 0.01
 
 
@@ -90,6 +90,12 @@ class PaperConfig:
         "max_rounds": 200,
         "round_size": 10,
         "timeout": 15,
+        "threshold": 0.0,  # just go as far as possible
+    }
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
         "threshold": 0.0,  # just go as far as possible
     }
     PARANOIA_LEVEL = 4

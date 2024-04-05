@@ -11,7 +11,13 @@ from sklearn.model_selection import train_test_split
 from wafamole.evasion import EvasionEngine  # type: ignore
 from src.modsec import init_modsec
 from src.model import create_wafamole_model, payload_to_vec
-from src.utils import load_data_label_vector, log, read_and_parse_sql, split_in_batches
+from src.utils import (
+    load_and_concat_batches,
+    load_data_label_vector,
+    log,
+    read_and_parse_sql,
+    split_in_batches,
+)
 
 
 wafamole_log = "logs/wafamole_log.txt"
@@ -54,11 +60,9 @@ def prepare_batches_for_addvec(
     log("reading and parsing raw sql files...", 2)
     attacks = read_and_parse_sql(attack_file)
     attacks["label"] = 1
-    attacks = attacks.drop_duplicates(subset=["data"])
 
     sanes = read_and_parse_sql(sane_file)
     sanes["label"] = 0
-    sanes = sanes.drop_duplicates(subset=["data"])
 
     log("splitting data into train and test...", 2)
     if data_overlap is not None:
@@ -127,28 +131,13 @@ def add_vec(data_path_tmp, file_name, rule_ids, paranoia_level):
         f"{data_path_tmp}/addedvec/{file_name}",
         mode="a",
         index=False,
-        header=False,
     )
 
 
-def addvec_batches_in_data_path_tmp(
-    data_path_tmp, rule_ids, paranoia_level, max_processes
+def addvec_batches_in_tmp_addvec_dir(
+    tmp_addvec_dir, rule_ids, paranoia_level, max_processes
 ):
-    def load_and_concat_addedvec_batches(files):
-        data = pd.concat(
-            [
-                pd.read_csv(
-                    f"{data_path_tmp}/addedvec/{file}",
-                    names=["data", "label", "vector"],
-                    header=None,
-                )
-                for file in files
-            ]
-        )
-        data["vector"] = data["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
-        return data
-
-    todo_files_all = os.listdir(f"{data_path_tmp}/todo")
+    todo_files_all = os.listdir(f"{tmp_addvec_dir}/todo")
     log(f"addvec to {len(todo_files_all)} batches...", 2)
 
     # addvec for all batches parallel
@@ -157,7 +146,7 @@ def addvec_batches_in_data_path_tmp(
             add_vec,
             [
                 (
-                    data_path_tmp,
+                    tmp_addvec_dir,
                     file,
                     rule_ids,
                     paranoia_level,
@@ -168,10 +157,10 @@ def addvec_batches_in_data_path_tmp(
 
     # concat
     addvec_files_train = [
-        file for file in os.listdir(f"{data_path_tmp}/addedvec") if "train" in file
+        file for file in os.listdir(f"{tmp_addvec_dir}/addedvec") if "train" in file
     ]
     addvec_files_test = [
-        file for file in os.listdir(f"{data_path_tmp}/addedvec") if "test" in file
+        file for file in os.listdir(f"{tmp_addvec_dir}/addedvec") if "test" in file
     ]
 
     log(
@@ -179,8 +168,10 @@ def addvec_batches_in_data_path_tmp(
         2,
     )
 
-    train = load_and_concat_addedvec_batches(addvec_files_train)
-    test = load_and_concat_addedvec_batches(addvec_files_test)
+    train = load_and_concat_batches(f"{tmp_addvec_dir}/addedvec", addvec_files_train)
+    train["vector"] = train["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
+    test = load_and_concat_batches(f"{tmp_addvec_dir}/addedvec", addvec_files_test)
+    test["vector"] = test["vector"].apply(lambda x: np.fromstring(x[1:-1], sep=" "))
 
     # return test, train
     return train, test
@@ -243,6 +234,7 @@ def optimize(
     )
     data_set = pd.read_csv(f"{data_path}/tmp_optimize/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
+    data_set_optimized = pd.DataFrame(columns=["data", "label", "min_confidence"])
     with open(wafamole_log, "a") as f:
         for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
             min_payload = None
@@ -252,23 +244,19 @@ def optimize(
                         payload=base64.b64decode(row["data"]).decode("utf-8"),
                         **engine_settings,
                     )
-                data_set.at[i, "data"] = base64.b64encode(
-                    min_payload.encode("utf-8")
-                ).decode("utf-8")
+                # add to data frame with loc
+                min_payload = base64.b64encode(min_payload.encode("utf-8")).decode(
+                    "utf-8"
+                )
+                data_set_optimized.loc[i] = [min_payload, row["label"], min_confidence]
             except Exception as e:
                 log(f"Error optimizing payload {i}: {e}")
                 log(f"Payload: {row['data']}")
-                if min_payload is not None:
-                    data_set.at[i, "data"] = base64.b64encode(
-                        min_payload.encode("utf-8")
-                    ).decode("utf-8")
-                    log(f"min_payload not None: {min_payload}")
                 continue
-    data_set.to_csv(
+    data_set_optimized.to_csv(
         f"{data_path}/tmp_optimize/optimized/{file_name}",
         mode="a",
         index=False,
-        header=False,
     )
     os.remove(f"{data_path}/tmp_optimize/todo/{file_name}")
     log(f"{file_name} done!", 1)
@@ -281,7 +269,6 @@ def optimize_batches_in_todo(
     paranoia_level,
     max_processes,
     data_path,
-    batch_size,
 ):
     """
     Reads batches from data_path/tmp_optimize/todo and optimizes them using the trained model and engine settings
@@ -297,18 +284,6 @@ def optimize_batches_in_todo(
     Returns:
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
-
-    def load_and_concat_optimized_batches(files):
-        return pd.concat(
-            [
-                pd.read_csv(
-                    f"{data_path}/tmp_optimize/optimized/{file}",
-                    names=["data", "label"],
-                    header=None,
-                )
-                for file in files
-            ]
-        )
 
     # get all filenames in data_path/tmp_optimize/todo
     todo_files_all = os.listdir(f"{data_path}/tmp_optimize/todo")
@@ -343,15 +318,33 @@ def optimize_batches_in_todo(
         for file in os.listdir(f"{data_path}/tmp_optimize/optimized")
         if "test" in file
     ]
+    optimized_files_sample = [
+        file
+        for file in os.listdir(f"{data_path}/tmp_optimize/optimized")
+        if "sample" in file
+    ]
 
     log(
-        f"concatenating {len(optimized_files_train)} optimized train baches and {len(optimized_files_test)} optimized test batches...",
+        f"concatenating {len(optimized_files_train)} optimized train baches, {len(optimized_files_test)} optimized test batches and {len(optimized_files_sample)} optimized sample batches...",
         2,
     )
 
-    train_adv = load_and_concat_optimized_batches(optimized_files_train)
-    test_adv = load_and_concat_optimized_batches(optimized_files_test)
+    train_adv = load_and_concat_batches(
+        f"{data_path}/tmp_optimize/optimized", optimized_files_train
+    )
+    test_adv = load_and_concat_batches(
+        f"{data_path}/tmp_optimize/optimized", optimized_files_test
+    )
+    sample_adv = load_and_concat_batches(
+        f"{data_path}/tmp_optimize/optimized", optimized_files_sample
+    )
 
+    return train_adv, test_adv, sample_adv
+
+
+def addvec_to_optmized_batches(
+    train_adv, test_adv, batch_size, data_path, rule_ids, paranoia_level, max_processes
+):
     # Add vector for payloads in train and test
     log("adding vectors...", 2)
     split_in_batches(
@@ -361,11 +354,10 @@ def optimize_batches_in_todo(
         test_adv, batch_size, f"{data_path}/tmp_addvec_after_optimize", "test_adv"
     )
 
-    train_adv, test_adv = addvec_batches_in_data_path_tmp(
-        f"{data_path}/tmp_addvec_after_optimize",
-        rule_ids,
-        paranoia_level,
-        max_processes,
+    train_adv, test_adv = addvec_batches_in_tmp_addvec_dir(
+        tmp_addvec_dir=f"{data_path}/tmp_addvec_after_optimize",
+        rule_ids=rule_ids,
+        paranoia_level=paranoia_level,
+        max_processes=max_processes,
     )
-
     return train_adv, test_adv
