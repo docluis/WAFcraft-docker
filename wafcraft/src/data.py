@@ -54,8 +54,7 @@ def prepare_batches_for_addvec(
     test_sanes_size,
     data_path,
     batch_size,
-    data_overlap_path,
-    data_overlap,
+    overlap_settings,
 ):
     log("reading and parsing raw sql files...", 2)
     attacks = read_and_parse_sql(attack_file)
@@ -64,12 +63,18 @@ def prepare_batches_for_addvec(
     sanes = read_and_parse_sql(sane_file)
     sanes["label"] = 0
 
-    log("splitting data into train and test...", 2)
-    if data_overlap is not None:
-        log(f"with overlap {data_overlap} from {data_overlap_path}", 2)
+    if overlap_settings["use_overlap"]:
+        log(
+            f'with overlap {overlap_settings["overlap"]} from {overlap_settings["overlap_path"]}',
+            2,
+        )
         # load the data from from the previous
-        base_train = load_data_label_vector(f"{data_overlap_path}/train.csv")
-        base_test = load_data_label_vector(f"{data_overlap_path}/test.csv")
+        base_train = load_data_label_vector(
+            f'{overlap_settings["overlap_path"]}/train.csv'
+        )
+        base_test = load_data_label_vector(
+            f'{overlap_settings["overlap_path"]}/test.csv'
+        )
         # drop vector column
         base_train = base_train.drop(columns=["vector"])
         base_test = base_test.drop(columns=["vector"])
@@ -80,16 +85,16 @@ def prepare_batches_for_addvec(
         base_test_sanes = base_test[base_test["label"] == 0]
 
         train_attacks = create_overlapping_dataset(
-            attacks, base_train_attacks, train_attacks_size, data_overlap
+            attacks, base_train_attacks, train_attacks_size, overlap_settings["overlap"]
         )
         train_sanes = create_overlapping_dataset(
-            sanes, base_train_sanes, train_sanes_size, data_overlap
+            sanes, base_train_sanes, train_sanes_size, overlap_settings["overlap"]
         )
         test_attacks = create_overlapping_dataset(
-            attacks, base_test_attacks, test_attacks_size, data_overlap
+            attacks, base_test_attacks, test_attacks_size, overlap_settings["overlap"]
         )
         test_sanes = create_overlapping_dataset(
-            sanes, base_test_sanes, test_sanes_size, data_overlap
+            sanes, base_test_sanes, test_sanes_size, overlap_settings["overlap"]
         )
     else:
         log("without overlap...", 2)
@@ -111,8 +116,6 @@ def prepare_batches_for_addvec(
     )
     test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
 
-    log("splitting data into batches...", 2)
-
     # split in batches on disk
     split_in_batches(train, batch_size, f"{data_path}/tmp_addvec", "train")
     split_in_batches(test, batch_size, f"{data_path}/tmp_addvec", "test")
@@ -129,7 +132,6 @@ def add_vec(data_path_tmp, file_name, rule_ids, paranoia_level):
 
     data_set.to_csv(
         f"{data_path_tmp}/addedvec/{file_name}",
-        mode="a",
         index=False,
     )
 
@@ -176,39 +178,19 @@ def addvec_batches_in_tmp_addvec_dir(
     # return test, train
     return train, test
 
-
 def prepare_batches_for_optimization(
-    train,
-    test,
-    train_adv_size,
-    test_adv_size,
-    batch_size,
-    data_path,
+    data_set, number, batch_size, data_path, tmp_dir, label
 ):
-    """
-    Prepares batches for optimization and saves them in data_path/tmp_optimize/todo
-
-    Parameters:
-        train (pd.DataFrame): Train dataframe
-        test (pd.DataFrame): Test dataframe
-        train_adv_size (int): Number of adversarial payloads to use for training
-        test_adv_size (int): Number of adversarial payloads to use for testing
-        batch_size (int): Number of payloads in each batch
-        data_path (str): Path to the data directory
-
-    """
-    # Sample train and test dataframes, only use attack payloads
-    train_adv = (
-        train[train["label"] == 1].sample(n=train_adv_size).drop(columns=["vector"])
-    )
-    test_adv = test[test["label"] == 1].sample(n=test_adv_size).drop(columns=["vector"])
-
-    split_in_batches(train_adv, batch_size, f"{data_path}/tmp_optimize", "train")
-    split_in_batches(test_adv, batch_size, f"{data_path}/tmp_optimize", "test")
+    data_set_adv = data_set[data_set["label"] == 1].sample(n=number)
+    # drop vector colum if exists
+    if "vector" in data_set_adv.columns:
+        data_set_adv = data_set_adv.drop(columns=["vector"])
+    split_in_batches(data_set_adv, batch_size, f"{data_path}/{tmp_dir}", label)
 
 
 def optimize(
     data_path,
+    tmp_dir,
     file_name,
     model_trained,
     engine_settings,
@@ -232,7 +214,7 @@ def optimize(
     wafamole_model = create_wafamole_model(
         model_trained, modsec, rule_ids, paranoia_level
     )
-    data_set = pd.read_csv(f"{data_path}/tmp_optimize/todo/{file_name}")
+    data_set = pd.read_csv(f"{data_path}/{tmp_dir}/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
     data_set_optimized = pd.DataFrame(columns=["data", "label", "min_confidence"])
     with open(wafamole_log, "a") as f:
@@ -254,11 +236,10 @@ def optimize(
                 log(f"Payload: {row['data']}")
                 continue
     data_set_optimized.to_csv(
-        f"{data_path}/tmp_optimize/optimized/{file_name}",
-        mode="a",
+        f"{data_path}/{tmp_dir}/optimized/{file_name}",
         index=False,
     )
-    os.remove(f"{data_path}/tmp_optimize/todo/{file_name}")
+    # os.remove(f"{data_path}/{tmp_dir}/todo/{file_name}")
     log(f"{file_name} done!", 1)
 
 
@@ -269,6 +250,7 @@ def optimize_batches_in_todo(
     paranoia_level,
     max_processes,
     data_path,
+    tmp_dir,
 ):
     """
     Reads batches from data_path/tmp_optimize/todo and optimizes them using the trained model and engine settings
@@ -285,8 +267,7 @@ def optimize_batches_in_todo(
         pd.DataFrame, pd.DataFrame: Train and test dataframes with adversarial payloads
     """
 
-    # get all filenames in data_path/tmp_optimize/todo
-    todo_files_all = os.listdir(f"{data_path}/tmp_optimize/todo")
+    todo_files_all = os.listdir(f"{data_path}/{tmp_dir}/todo")
 
     log(f"optimizing {len(todo_files_all)} batches...", 2)
 
@@ -297,6 +278,7 @@ def optimize_batches_in_todo(
             [
                 (
                     data_path,
+                    tmp_dir,
                     file,
                     model_trained,
                     engine_settings,
@@ -310,17 +292,17 @@ def optimize_batches_in_todo(
     # Read and concatenate optimized train
     optimized_files_train = [
         file
-        for file in os.listdir(f"{data_path}/tmp_optimize/optimized")
+        for file in os.listdir(f"{data_path}/{tmp_dir}/optimized")
         if "train" in file
     ]
     optimized_files_test = [
         file
-        for file in os.listdir(f"{data_path}/tmp_optimize/optimized")
+        for file in os.listdir(f"{data_path}/{tmp_dir}/optimized")
         if "test" in file
     ]
     optimized_files_sample = [
         file
-        for file in os.listdir(f"{data_path}/tmp_optimize/optimized")
+        for file in os.listdir(f"{data_path}/{tmp_dir}/optimized")
         if "sample" in file
     ]
 
@@ -330,13 +312,13 @@ def optimize_batches_in_todo(
     )
 
     train_adv = load_and_concat_batches(
-        f"{data_path}/tmp_optimize/optimized", optimized_files_train
+        f"{data_path}/{tmp_dir}/optimized", optimized_files_train
     )
     test_adv = load_and_concat_batches(
-        f"{data_path}/tmp_optimize/optimized", optimized_files_test
+        f"{data_path}/{tmp_dir}/optimized", optimized_files_test
     )
     sample_adv = load_and_concat_batches(
-        f"{data_path}/tmp_optimize/optimized", optimized_files_sample
+        f"{data_path}/{tmp_dir}/optimized", optimized_files_sample
     )
 
     return train_adv, test_adv, sample_adv

@@ -1,7 +1,10 @@
 import base64
+import datetime
 import re
 import os
+import shutil
 
+import joblib
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -20,9 +23,9 @@ os.makedirs("/app/wafcraft/logs", exist_ok=True)
 
 
 def log(message, level=1):
-    time = pd.Timestamp.now()
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(log_path, "a") as log_file:
-        log_file.write(f"[{time}] {message}\n")
+        log_file.write(f"[{ts}] {message}\n")
     if level >= 2:
         print(message)
         if level >= 3:
@@ -43,6 +46,13 @@ def generate_codename():
     """
     faker = Faker()
     return f"{faker.color_name().lower()}-{faker.word().lower()}"
+
+
+def generate_workspace_path():
+    ts = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    codename = generate_codename()
+    data_path = f"data/prepared/{ts} {codename}"
+    return data_path
 
 
 def get_config_string(Config):
@@ -189,3 +199,45 @@ def plot_precision_recall_curve(y_test, probabilities, path=None):
     if path:
         plt.savefig(path)
     plt.show()
+
+
+def remove_tmp_dirs(workspace):
+    # remove all temporary directories, okay if they do not exist
+    shutil.rmtree(f"{workspace}/tmp_addvec", ignore_errors=True)
+    shutil.rmtree(f"{workspace}/tmp_optimize", ignore_errors=True)
+    shutil.rmtree(f"{workspace}/tmp_addvec_after_optimize", ignore_errors=True)
+    shutil.rmtree(f"{workspace}/tmp_samples", ignore_errors=True)
+
+
+def save_settings(Config, workspace):
+    with open(f"{workspace}/config.txt", "w") as f:
+        f.write(get_config_string(Config))
+
+
+def save_model(workspace, model_dir, model, threshold, is_adv):
+    joblib.dump(
+        model, f'{workspace}/{model_dir}/model{"_adv" if is_adv else ""}.joblib'
+    )
+    with open(
+        f'{workspace}/{model_dir}/threshold{"_adv" if is_adv else ""}.txt', "w"
+    ) as f:
+        f.write(str(threshold))
+
+
+def determine_progress(workspace):
+    has_model = os.path.exists(f"{workspace}/model/model.joblib")
+    has_tmp_optimize_todos = os.path.exists(f"{workspace}/tmp_optimize/todo")
+    if has_tmp_optimize_todos:
+        has_tmp_optimize_todos = len(os.listdir(f"{workspace}/tmp_optimize/todo")) > 0
+    has_adv_model = os.path.exists(f"{workspace}/model_adv/model_adv.joblib")
+    has_tmp_samples_todos = os.path.exists(f"{workspace}/tmp_samples/todo")
+    if has_tmp_samples_todos:
+        has_tmp_samples_todos = len(os.listdir(f"{workspace}/tmp_samples/todo")) > 0
+    has_sample_adv_csv = os.path.exists(f"{workspace}/sample_adv.csv")
+    return (
+        has_model,
+        has_tmp_optimize_todos,
+        has_adv_model,
+        has_tmp_samples_todos,
+        has_sample_adv_csv,
+    )
