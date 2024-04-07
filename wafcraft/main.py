@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from config import Target_Config, Test_Config
+from config import Target_Config, Test_Config, Test_Surrogate_0_Overlap, Test_Surrogate_100_Overlap
 from src.pipeline import run_model_pipeline
 from src.utils import (
     generate_workspace_path,
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--config",
-        choices=["test", "target"],
+        type=str,
         help="Choose the configuration to use.",
         required=True,
     )
@@ -42,6 +42,10 @@ if __name__ == "__main__":
     # Set config based on the argument
     if args.config == "test":
         Config = Test_Config
+    elif args.config == "test_surrogate_0_overlap":
+        Config = Test_Surrogate_0_Overlap
+    elif args.config == "test_surrogate_100_overlap":
+        Config = Test_Surrogate_100_Overlap
     elif args.config == "target":
         Config = Target_Config
     else:

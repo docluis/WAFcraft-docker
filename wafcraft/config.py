@@ -4,6 +4,9 @@ from sklearn.ensemble import RandomForestClassifier
 from src.utils import get_rules_list
 
 
+# ----------------- Test Configurations -----------------
+
+
 class Test_Config:
     # General Settings
     NAME = "Test"
@@ -48,6 +51,31 @@ class Test_Config:
     }
 
 
+class Test_Surrogate_0_Overlap(Test_Config):
+    NAME = "Test_Surrogate_0_Overlap"
+    DESCRIPTION = "small quick test with surrogate model 0% overlap"
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 17-54-10 ivory-foot",
+    }
+    FIND_SAMPLES = False
+
+
+class Test_Surrogate_100_Overlap(Test_Config):
+    NAME = "Test_Surrogate_0_Overlap"
+    DESCRIPTION = "small quick test with surrogate model 100% overlap"
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 17-54-10 ivory-foot",
+    }
+    FIND_SAMPLES = False
+
+
+# ----------------- Target Configuration -----------------
+
+
 class Target_Config:
     # General Settings
     NAME = "Target"
@@ -90,6 +118,9 @@ class Target_Config:
         "timeout": 30,
         "threshold": 0.0,
     }
+
+
+# ----------------- Surrogate Configuration -----------------
 
 
 class Surrogate_SVM_V1_Config(Target_Config):
