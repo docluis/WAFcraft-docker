@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import shutil
 import joblib
 import pandas as pd
 from src.data import optimize_batches_in_todo
@@ -32,8 +33,8 @@ def find_samples(Config, data_path, attempts):
     test_adv = load_data_label_vector(f"{data_path}/test_adv.csv")
 
     # load model (potentaly not needed)
-    model_trained = joblib.load(f"{data_path}/model.joblib")
-    threshold = float(open(f"{data_path}/threshold.txt", "r").read())
+    model_trained = joblib.load(f"{data_path}/model/model.joblib")
+    threshold = float(open(f"{data_path}/model/threshold.txt", "r").read())
 
     # train adv model
     model_adv_trained, threshold_adv = train_model(
@@ -41,7 +42,13 @@ def find_samples(Config, data_path, attempts):
         test=pd.concat([test, test_adv]).sample(frac=1).reset_index(drop=True),
         model=Config.MODEL_ADV,
         desired_fpr=Config.DESIRED_FPR,
+        image_path=f"{data_path}/model_adv",
     )
+
+    # save model_adv and threshold_adv
+    joblib.dump(model_adv_trained, f"{data_path}/model_adv/model_adv.joblib")
+    with open(f"{data_path}/model_adv/threshold_adv.txt", "w") as f:
+        f.write(str(threshold_adv))
 
     # sample attacks
     log(f"reading and parsing sql file...", 2)
@@ -70,7 +77,16 @@ def find_samples(Config, data_path, attempts):
     # only save the samples with min_confidence column < threshold_adv
     sample_adv = sample_adv[sample_adv["min_confidence"] < threshold_adv]
     log(f"found {sample_adv.shape[0]} adversarial samples", 3)
-    sample_adv.to_csv(f"{data_path}/sample_adv.csv", index=False)
+
+    # append to file if it exists else create it
+    if os.path.exists(f"{data_path}/sample_adv.csv"):
+        sample_adv.to_csv(
+            f"{data_path}/sample_adv.csv", mode="a", header=False, index=False
+        )
+    else:
+        sample_adv.to_csv(f"{data_path}/sample_adv.csv", index=False)
+
+    shutil.rmtree(f"{data_path}/tmp_optimize")
 
 
 if __name__ == "__main__":

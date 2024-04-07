@@ -19,6 +19,12 @@ class BaseConfig:
         "round_size": 10,
         "timeout": 5,
     }
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 10,
+        "threshold": 0.0,  # just go as far as possible
+    }
     PARANOIA_LEVEL = 4
     MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
@@ -43,6 +49,12 @@ class StressConfig:
         "round_size": 10,
         "timeout": 5,
     }
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
+        "threshold": 0.0,  # just go as far as possible
+    }
     PARANOIA_LEVEL = 4
     MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
     MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
@@ -66,6 +78,12 @@ class HalfConfig:
         "max_rounds": 200,
         "round_size": 10,
         "timeout": 5,
+    }
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
+        "threshold": 0.0,  # just go as far as possible
     }
     PARANOIA_LEVEL = 4
     MODEL = RandomForestClassifier(n_estimators=160, random_state=666)

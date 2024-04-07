@@ -48,6 +48,8 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
     data_path = f"data/prepared/{ts} {codename}"
 
     os.makedirs(data_path, exist_ok=True)
+    os.makedirs(f"{data_path}/model", exist_ok=True)
+    os.makedirs(f"{data_path}/model_adv", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_optimize", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec", exist_ok=True)
     os.makedirs(f"{data_path}/tmp_addvec_after_optimize", exist_ok=True)
@@ -100,10 +102,14 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
 
     # 4. train model and save it
     model_trained, threshold = train_model(
-        train=train, test=test, model=Config.MODEL, desired_fpr=Config.DESIRED_FPR
+        train=train,
+        test=test,
+        model=Config.MODEL,
+        desired_fpr=Config.DESIRED_FPR,
+        image_path=f"{data_path}/model",
     )
-    joblib.dump(model_trained, f"{data_path}/model.joblib")
-    with open(f"{data_path}/threshold.txt", "w") as f:
+    joblib.dump(model_trained, f"{data_path}/model/model.joblib")
+    with open(f"{data_path}/model/threshold.txt", "w") as f:
         f.write(str(threshold))
 
     # 5. choose payloads for train_adv and test_adv and split them into batches
@@ -125,7 +131,7 @@ def prepare_and_train(Config, data_overlap_path, data_overlap):
 
 def optimize_data(Config, data_path):
     # 1. load model
-    model_trained = joblib.load(f"{data_path}/model.joblib")
+    model_trained = joblib.load(f"{data_path}/model/model.joblib")
 
     # 2. optimize, add vectors and save to disk
     train_adv, test_adv, _ = optimize_batches_in_todo(

@@ -41,7 +41,7 @@ def payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level):
     return np.array(rule_array)
 
 
-def train_model(train, test, model, desired_fpr):
+def train_model(train, test, model, desired_fpr, image_path):
     """
     Returns a trained model and the threshold for the desired FPR
 
@@ -78,7 +78,7 @@ def train_model(train, test, model, desired_fpr):
     log(classification_report(y_test, predictions), 2)
 
     cm = confusion_matrix(y_test, predictions)
-    plot_cm(cm)
+    plot_cm(cm, f"{image_path}/confusion_matrix_before_adjustment.png")
 
     if desired_fpr is not None:
         log(f"Adjusting threshold to match desired FPR of {desired_fpr}", 2)
@@ -90,8 +90,8 @@ def train_model(train, test, model, desired_fpr):
         threshold = thresholds[closest_idx]
         adjusted_predictions = (probabilities >= threshold).astype(int)  #  new preds
 
-        plot_roc(fpr, tpr, closest_idx, desired_fpr)
-        plot_precision_recall_curve(y_test, probabilities)
+        plot_roc(fpr, tpr, closest_idx, desired_fpr, f"{image_path}/roc_curve.png")
+        plot_precision_recall_curve(y_test, probabilities, f"{image_path}/precision_recall_curve.png")
 
         log(
             f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})",
@@ -100,7 +100,7 @@ def train_model(train, test, model, desired_fpr):
         log(classification_report(y_test, adjusted_predictions), 2)
 
         cm = confusion_matrix(y_test, adjusted_predictions)
-        plot_cm(cm)
+        plot_cm(cm, f"{image_path}/confusion_matrix_after_adjustment.png")
 
     return model, threshold
 

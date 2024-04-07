@@ -128,7 +128,7 @@ def load_and_concat_batches(directory, files):
         return data
 
 
-def plot_cm(cm):
+def plot_cm(cm, path=None):
     plt.figure(figsize=(4, 3))
     sns.heatmap(
         cm,
@@ -143,10 +143,13 @@ def plot_cm(cm):
     plt.ylabel("Actual")
     plt.xlabel("Predicted")
     plt.title("Confusion Matrix")
+    # save as image
+    if path:
+        plt.savefig(path)
     plt.show()
 
 
-def plot_roc(fpr, tpr, closest_idx, desired_fpr):
+def plot_roc(fpr, tpr, closest_idx, desired_fpr, path=None):
     plt.figure(figsize=(4, 3))
     plt.plot(fpr, tpr, label="ROC curve")
     plt.ylabel("True Positive Rate (TPR)")
@@ -168,10 +171,12 @@ def plot_roc(fpr, tpr, closest_idx, desired_fpr):
         ha="center",
     )
     plt.legend()
+    if path:
+        plt.savefig(path)
     plt.show()
 
 
-def plot_precision_recall_curve(y_test, probabilities):
+def plot_precision_recall_curve(y_test, probabilities, path=None):
     precision, recall, thresholds = precision_recall_curve(y_test, probabilities)
     thresholds = np.append(thresholds, 1)
     plt.figure(figsize=(4, 3))
@@ -181,4 +186,6 @@ def plot_precision_recall_curve(y_test, probabilities):
     plt.title("Precision-Recall Curve")
     plt.legend()
     plt.grid(True)
+    if path:
+        plt.savefig(path)
     plt.show()
