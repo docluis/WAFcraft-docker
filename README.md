@@ -31,14 +31,8 @@ python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 ### How to run wafcraft
 ```bash
 cd wafcraft
-# Prepare Data (create train.csv and test.csv)
-python prepare_data.py --mode prepare --config paper
-# Optimize Data (create train_adv.csv and test_adv.csv)
-python prepare_data.py --mode optimize --config paper
-# Do both, notify if error occurs
-python prepare_data.py --mode prepare --config paper && python prepare_data.py --mode optimize --config paper || curl -d "`hostname`: something went wrong :/" ntfy.sh/luis-info-buysvauy12iiq
-# Prepare Data (create train.csv and test.csv) with overlap to perevious data
-python prepare_data.py --mode prepare --config paper --data_overlap_path '/app/wafcraft/data/prepared/2024-04-03 12-13-13 lightcoral-investment' --data_overlap 0.5 && python prepare_data.py --mode optimize --config paper || curl -d "`hostname`: something went wrong :/" ntfy.sh/luis-info-buysvauy12iiq
+# example
+python main.py --config target --new || curl -d "`hostname`: something went wrong :/" ntfy.sh/luis-info-buysvauy12iiq
 # then run the Notebook
 ```
 > Access the **Jupyter Notebooks** via: http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT
