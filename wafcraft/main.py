@@ -2,6 +2,7 @@ import argparse
 import os
 
 from config import (
+    Surrogate_Data_V1_Config,
     Surrogate_SVM_V1_Config,
     Target_Config,
     Test_Config,
@@ -56,6 +57,8 @@ if __name__ == "__main__":
         Config = Target_Config
     elif args.config == "surrogate_svm_v1":
         Config = Surrogate_SVM_V1_Config
+    elif args.config == "surrogate_data_v1":
+        Config = Surrogate_Data_V1_Config
     else:
         raise ValueError("Invalid config")
 

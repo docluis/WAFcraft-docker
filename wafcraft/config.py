@@ -144,3 +144,17 @@ class Surrogate_SVM_V1_Config(Target_Config):
     MODEL_ADV = SVC(random_state=666, probability=True)
     # Sample Creation Settings
     FIND_SAMPLES = True
+
+class Surrogate_Data_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V1"
+    DESCRIPTION = "surrogate model with 0% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
