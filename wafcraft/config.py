@@ -1,6 +1,7 @@
 # This file holds different Configurations
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from src.utils import get_rules_list
 
 
@@ -51,7 +52,7 @@ class Test_Config:
     }
 
 
-class Test_Surrogate_0_Overlap(Test_Config):
+class Test_Surrogate_Overlap_V1_Config(Test_Config):
     NAME = "Test_Surrogate_0_Overlap"
     DESCRIPTION = "small quick test with surrogate model 0% overlap"
     OVERLAP_SETTINGS = {
@@ -61,16 +62,21 @@ class Test_Surrogate_0_Overlap(Test_Config):
     }
     FIND_SAMPLES = False
 
-
-class Test_Surrogate_100_Overlap(Test_Config):
-    NAME = "Test_Surrogate_0_Overlap"
-    DESCRIPTION = "small quick test with surrogate model 100% overlap"
+class Test_Surrogate_SVM_V1_Config(Test_Config):
+    # General Settings
+    NAME = "Test_Surrogate_SVM_V1"
+    DESCRIPTION = "surrogate model with SVM and 100% overlap"
+    # Training Settings
+    MODEL = SVC(random_state=666, probability=True)
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 1,
         "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 17-54-10 ivory-foot",
     }
-    FIND_SAMPLES = False
+    # Adversarial Training Settings
+    MODEL_ADV = SVC(random_state=666, probability=True)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
 
 
 # ----------------- Target Configuration -----------------
@@ -124,4 +130,17 @@ class Target_Config:
 
 
 class Surrogate_SVM_V1_Config(Target_Config):
+    # General Settings
     NAME = "Surrogate_SVM_V1"
+    DESCRIPTION = "surrogate model with SVM and 100% overlap"
+    # Training Settings
+    MODEL = SVC(random_state=666, probability=True)
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = SVC(random_state=666, probability=True)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
