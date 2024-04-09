@@ -178,6 +178,7 @@ def addvec_batches_in_tmp_addvec_dir(
     # return test, train
     return train, test
 
+
 def prepare_batches_for_optimization(
     data_set, number, batch_size, data_path, tmp_dir, label
 ):
@@ -216,7 +217,9 @@ def optimize(
     )
     data_set = pd.read_csv(f"{data_path}/{tmp_dir}/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
-    data_set_optimized = pd.DataFrame(columns=["data", "label", "min_confidence"])
+    data_set_optimized = pd.DataFrame(
+        columns=["data", "original", "label", "min_confidence"]
+    )
     with open(wafamole_log, "a") as f:
         for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
             min_payload = None
@@ -230,7 +233,12 @@ def optimize(
                 min_payload = base64.b64encode(min_payload.encode("utf-8")).decode(
                     "utf-8"
                 )
-                data_set_optimized.loc[i] = [min_payload, row["label"], min_confidence]
+                data_set_optimized.loc[i] = [
+                    min_payload,
+                    row["data"],
+                    row["label"],
+                    min_confidence,
+                ]
             except Exception as e:
                 log(f"Error optimizing payload {i}: {e}")
                 log(f"Payload: {row['data']}")

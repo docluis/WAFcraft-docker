@@ -30,9 +30,14 @@ python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 
 ### How to run wafcraft
 ```bash
-cd wafcraft
-# example
-python main.py --config target --new || curl -d "`hostname`: something went wrong :/" ntfy.sh/luis-info-buysvauy12iiq
-# then run the Notebook
+cd wafcraft # navigate to wafcraft directory (in Docker container)
+# example creation of Target config 
+python main.py --data --config Target --new
+# example creation of Surrogate with 0% data overlap
+python main.py --data --config Surrogate_Data_V1 --new
+# example rerun of data creation (incase of crash or to add more samples)
+python main.py --data --config Surrogate_Data_V1 --workspace <WORKSPACE DIR>
+# test transferability
+python main.py --transfer --config Target --target <TARGET WORKSPACE DIR> --surrogate <SURROGATE WORKSPACE DIR>
 ```
 > Access the **Jupyter Notebooks** via: http://127.0.0.1:8888/?token=aC9Zsec4kHLAcYndnYoUsaZbM52LrT

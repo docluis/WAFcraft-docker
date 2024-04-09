@@ -158,3 +158,17 @@ class Surrogate_Data_V1_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
+class Surrogate_Data_V2_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V2"
+    DESCRIPTION = "surrogate model with 25% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.25,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True

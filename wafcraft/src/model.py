@@ -41,6 +41,23 @@ def payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level):
     return np.array(rule_array)
 
 
+def predict_vec(vec, model):
+    """
+    Returns the confidence of a model for a given vector
+
+    Parameters:
+        vec (numpy.ndarray): Vectorized payload
+        model: Model to predict with
+
+    Returns:
+        float: Confidence of the model (1 = attack, 0 = sane)
+    """
+    probs = model.predict_proba([vec])[0]
+    attack_index = list(model.classes_).index(1)
+    confidence = probs[attack_index]
+    return confidence
+
+
 def train_model(train, test, model, desired_fpr, image_path):
     """
     Returns a trained model and the threshold for the desired FPR
@@ -91,7 +108,9 @@ def train_model(train, test, model, desired_fpr, image_path):
         adjusted_predictions = (probabilities >= threshold).astype(int)  #  new preds
 
         plot_roc(fpr, tpr, closest_idx, desired_fpr, f"{image_path}/roc_curve.png")
-        plot_precision_recall_curve(y_test, probabilities, f"{image_path}/precision_recall_curve.png")
+        plot_precision_recall_curve(
+            y_test, probabilities, f"{image_path}/precision_recall_curve.png"
+        )
 
         log(
             f"Adjusted threshold: {round(threshold, 4)} with FPR of {round(fpr[closest_idx], 4)} (closest to desired FPR {desired_fpr})",
@@ -123,12 +142,6 @@ def create_wafamole_model(
     Returns:
         wafamole.models.Model: WAFamole model
     """
-
-    def predict_vec(vec, model):
-        probs = model.predict_proba([vec])[0]
-        attack_index = list(model.classes_).index(1)
-        confidence = probs[attack_index]
-        return confidence
 
     class WAFamoleModel(Model):
         def extract_features(self, value: str):

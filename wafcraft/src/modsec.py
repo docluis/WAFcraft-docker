@@ -12,7 +12,7 @@ import re
 import glob
 from urllib.parse import urlparse, urlencode
 from typing import List, Optional
-from typing_extensions import Annotated
+from typing_extensions import Annotated # type: ignore
 from enum import Enum
 
 

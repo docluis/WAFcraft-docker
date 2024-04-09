@@ -3,6 +3,7 @@ import os
 
 from config import (
     Surrogate_Data_V1_Config,
+    Surrogate_Data_V2_Config,
     Surrogate_SVM_V1_Config,
     Target_Config,
     Test_Config,
@@ -17,6 +18,7 @@ from src.utils import (
     log,
     save_settings,
 )
+from src.transfer import test_transferability
 
 
 if __name__ == "__main__":
@@ -31,48 +33,113 @@ if __name__ == "__main__":
         required=True,
     )
 
-    # require either --workspace "path_to_workspace" or --new
-    workspace_group = parser.add_mutually_exclusive_group(required=True)
-    workspace_group.add_argument(
+    # Mode selection
+    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group.add_argument(
+        "--data",
+        action="store_true",
+        help="Generate data for a model",
+    )
+    mode_group.add_argument(
+        "--transfer",
+        action="store_true",
+        help="Test transfer of samples between models",
+    )
+
+    # Data arguments
+    data_group = parser.add_mutually_exclusive_group(required=False)
+    data_group.add_argument(
         "--workspace",
         type=str,
         help="Directory name of the workspace",
     )
-    workspace_group.add_argument(
+    data_group.add_argument(
         "--new",
         action="store_true",
         help="Create a new workspace",
     )
 
+    # transfer arguments
+    parser.add_argument(
+        "--target",
+        type=str,
+        help="Directory name of the target workspace",
+    )
+    parser.add_argument(
+        "--surrogate",
+        type=str,
+        help="Directory name of the surrogate workspace",
+    )
+    parser.add_argument(
+        "--target_use_adv",
+        type=bool,
+        help="Use adversarial model for target (default: True)",
+        default=True,
+    )
+    parser.add_argument(
+        "--surrogate_use_adv",
+        type=bool,
+        help="Use adversarial model for surrogate (only important for output) (default: True)",
+        default=True,
+    )
+
     args = parser.parse_args()
 
+    # Check if the arguments are valid
+    if args.data and not (args.workspace or args.new):
+        parser.error("--data requires either --workspace or --new.")
+    if args.transfer and not (args.target and args.surrogate):
+        parser.error("--transfer requires --target and --surrogate.")
+
     # Set config based on the argument
-    if args.config == "test":
-        Config = Test_Config
-    elif args.config == "test_surrogate_overlap_v1":
-        Config = Test_Surrogate_Overlap_V1_Config
-    elif args.config == "test_surrogate_svm_v1":
-        Config = Test_Surrogate_SVM_V1_Config
-    elif args.config == "target":
-        Config = Target_Config
-    elif args.config == "surrogate_svm_v1":
-        Config = Surrogate_SVM_V1_Config
-    elif args.config == "surrogate_data_v1":
-        Config = Surrogate_Data_V1_Config
-    else:
+    Configs = [
+        Surrogate_Data_V1_Config,
+        Surrogate_Data_V2_Config,
+        Surrogate_SVM_V1_Config,
+        Target_Config,
+        Test_Config,
+        Test_Surrogate_Overlap_V1_Config,
+        Test_Surrogate_SVM_V1_Config,
+    ]
+
+    Config = None
+    for C in Configs:
+        if C.NAME == args.config:
+            Config = C
+            break
+    if Config is None:
         raise ValueError("Invalid config")
 
-    if args.new:
-        workspace = generate_workspace_path()
-        os.makedirs(workspace, exist_ok=True)
-        save_settings(Config, workspace)
+    if args.data:
         log(f'\n\n\n{"-"*60}', 2)
-        log("starting new workspace", 2)
-        log(f"workspace: {workspace}", 2)
-        log(f"using config:\n{get_config_string(Config)}", 2)
-    else:
-        workspace = f"/app/wafcraft/data/prepared/{args.workspace}"
-        if not os.path.exists(workspace):
-            raise ValueError(f"Workspace {workspace} does not exist")
+        log("[main] running model pipeline to generate new data...", 2)
+        if args.new:
+            workspace = generate_workspace_path()
+            os.makedirs(workspace, exist_ok=True)
+            save_settings(Config, workspace)
+            log(f"starting new workspace: {workspace}", 2)
+        else:
+            workspace = f"/app/wafcraft/data/prepared/{args.workspace}"
+            if not os.path.exists(workspace):
+                raise ValueError(f"Workspace {workspace} does not exist")
+            log(f"using existing workspace: {workspace}", 2)
+            log(f"using config:\n{get_config_string(Config)}", 2)
+        run_model_pipeline(Config, workspace)
 
-    run_model_pipeline(Config, workspace)
+    if args.transfer:
+        log(f'\n\n\n{"-"*60}', 2)
+        log("[main] testing transferability...", 2)
+        target_workspace = f"/app/wafcraft/data/prepared/{args.target}"
+        if not os.path.exists(target_workspace):
+            raise ValueError(f"Workspace {target_workspace} does not exist")
+        surrogate_workspace = f"/app/wafcraft/data/prepared/{args.surrogate}"
+        if not os.path.exists(surrogate_workspace):
+            raise ValueError(f"Workspace {surrogate_workspace} does not exist")
+        test_transferability(
+            Config,
+            target_workspace,
+            surrogate_workspace,
+            args.target_use_adv,
+            args.surrogate_use_adv,
+        )
+    log("\n\n", 2)
