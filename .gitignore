@@ -1,13 +1,9 @@
 placeholder
 modsecurity-v3.0.10
 modsecurity-v3.0.10.tar.gz
-wafcraft/train_dataset.csv
-wafcraft/test_dataset.csv
 wafcraft/data/raw
-wafcraft/data/tmp
 wafcraft/data/prepared/*
-wafcraft/data/preprocessed
 wafcraft/__pycache__
 wafcraft/.ipynb_checkpoints
-wafcraft/logs/*
 wafcraft/src/__pycache__
+wafcraft/logs/*
