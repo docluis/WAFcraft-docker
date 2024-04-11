@@ -42,7 +42,7 @@ class Test_Config:
         "threshold": 0.0,  # just go as far as possible
     }
     # Sample Creation Settings
-    FIND_SAMPLES = True
+    FIND_SAMPLES = False
     SAMPLE_ATTEMPTS = 100
     ENGINE_SETTINGS_SAMPLE_CREATION = {
         "max_rounds": 300,
@@ -53,14 +53,18 @@ class Test_Config:
 
 
 class Test_Surrogate_Overlap_V1_Config(Test_Config):
-    NAME = "Test_Surrogate_0_Overlap"
+    # General Settings
+    NAME = "Test_Surrogate_Overlap_V1"
     DESCRIPTION = "small quick test with surrogate model 0% overlap"
+    # Training Settings
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 0,
-        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 17-54-10 ivory-foot",
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-11 12-24-52 violet-east",
     }
-    FIND_SAMPLES = False
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
 
 class Test_Surrogate_SVM_V1_Config(Test_Config):
     # General Settings
@@ -71,7 +75,7 @@ class Test_Surrogate_SVM_V1_Config(Test_Config):
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 1,
-        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 17-54-10 ivory-foot",
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-11 12-24-52 violet-east",
     }
     # Adversarial Training Settings
     MODEL_ADV = SVC(random_state=666, probability=True)
@@ -167,6 +171,48 @@ class Surrogate_Data_V2_Config(Target_Config):
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 0.25,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V3_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V3"
+    DESCRIPTION = "surrogate model with 50% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.5,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V4_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V4"
+    DESCRIPTION = "surrogate model with 75% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.75,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V5_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V5"
+    DESCRIPTION = "surrogate model with 100% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
         "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
     }
     # Adversarial Training Settings

@@ -4,6 +4,9 @@ import os
 from config import (
     Surrogate_Data_V1_Config,
     Surrogate_Data_V2_Config,
+    Surrogate_Data_V3_Config,
+    Surrogate_Data_V4_Config,
+    Surrogate_Data_V5_Config,
     Surrogate_SVM_V1_Config,
     Target_Config,
     Test_Config,
@@ -95,6 +98,9 @@ if __name__ == "__main__":
     Configs = [
         Surrogate_Data_V1_Config,
         Surrogate_Data_V2_Config,
+        Surrogate_Data_V3_Config,
+        Surrogate_Data_V4_Config,
+        Surrogate_Data_V5_Config,
         Surrogate_SVM_V1_Config,
         Target_Config,
         Test_Config,

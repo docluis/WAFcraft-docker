@@ -1,35 +1,80 @@
 import os
 import joblib
 import pandas as pd
+from tqdm import tqdm
 
 from src.modsec import init_modsec
 from src.model import payload_to_vec, predict_vec
 from src.utils import log
 
 
-def format_transferability_results(
+def save_results(
     target_workspace,
     surrogate_workspace,
     target_threshold,
     surrogate_threshold,
     samples_tested,
 ):
+    target_workspace_dir = target_workspace.split("/")[-1]
+    surrogate_workspace_dir = surrogate_workspace.split("/")[-1]
+
+    results_dir = f"/app/wafcraft/results/target_{target_workspace_dir}"
+    os.makedirs(results_dir, exist_ok=True)
+    results_file = f"{results_dir}/transferability.csv"
+
+    samples_tested_dir = f"{results_dir}/samples_tested"
+    os.makedirs(samples_tested_dir, exist_ok=True)
+    samples_file = f"{samples_tested_dir}/surrogate_{surrogate_workspace_dir}.csv"
+
     total_samples_count = len(samples_tested)
     samples_evaded_count = samples_tested["evaded"].sum()
     samples_evaded_percentage = samples_evaded_count / total_samples_count
 
     target_confidence_mean = samples_tested["target_confidence"].mean()
-    surrogate_confidence_mean = samples_tested["surrogate_confidence"].mean()
+    target_confidence_original_mean = samples_tested[
+        "target_confidence_original"
+    ].mean()
 
-    results = (
-        "Transferability results:\n"
-        f"Target: {target_workspace}\n"
-        f"Surrogate: {surrogate_workspace}\n"
-        f"Target confidence mean: {target_confidence_mean:.5f} (threshold: {target_threshold})\n"
-        f"Surrogate confidence mean: {surrogate_confidence_mean:.5f} (threshold: {surrogate_threshold})\n"
-        f"Samples evaded: {samples_evaded_count} out of {total_samples_count} ({samples_evaded_percentage:.2%})"
+    target_confidence_reduction_mean = target_confidence_original_mean - target_confidence_mean
+
+    surrogate_confidence_mean = samples_tested["surrogate_confidence"].mean()
+    surrogate_confidence_original_mean = samples_tested[
+        "surrogate_confidence_original"
+    ].mean()
+
+    surrogate_confidence_reduction_mean = surrogate_confidence_original_mean - surrogate_confidence_mean
+
+    
+
+    description = ""
+    with open(f"{surrogate_workspace}/config.txt", "r") as file:
+        for line in file:
+            if line.strip().startswith("DESCRIPTION:"):
+                description = line.strip().split("DESCRIPTION:", 1)[1].strip()
+
+    results = pd.DataFrame(
+        {
+            "surrogate_workspace": surrogate_workspace_dir,
+            "description": description,
+            "target_threshold": target_threshold,
+            "surrogate_threshold": surrogate_threshold,
+            "total_samples_count": total_samples_count,
+            "samples_evaded_count": samples_evaded_count,
+            "samples_evaded_percentage": samples_evaded_percentage,
+            "target_confidence_mean": target_confidence_mean,
+            "target_confidence_original_mean": target_confidence_original_mean,
+            "surrogate_confidence_mean": surrogate_confidence_mean,
+            "surrogate_confidence_original_mean": surrogate_confidence_original_mean,
+            "target_confidence_reduction_mean": target_confidence_reduction_mean,
+            "surrogate_confidence_reduction_mean": surrogate_confidence_reduction_mean,
+        },
+        index=[0],
     )
-    return results
+
+    if os.path.exists(results_file):
+        results = pd.concat([pd.read_csv(results_file), results], ignore_index=True)
+    results.to_csv(results_file, index=False)
+    samples_tested.to_csv(samples_file, index=False)
 
 
 def load_model_threshold(workspace, use_adv):
@@ -68,32 +113,47 @@ def test_transferability(
     paranoia_level = Target_Config.PARANOIA_LEVEL
 
     samples_tested = pd.DataFrame(
-        columns=["data", "target_confidence", "surrogate_confidence", "evaded"]
+        columns=[
+            "data",
+            "original",
+            "target_confidence",
+            "target_confidence_original",
+            "surrogate_confidence",
+            "surrogate_confidence_original",
+            "evaded",
+        ]
     )
-    for i, row in samples.iterrows():
+    for i, row in tqdm(
+        samples.iterrows(), total=samples.shape[0], desc="Testing samples"
+    ):
+        # calculate target confidence of sample (original)
+        payload_base64_original = row["original"]
+        vec_original = payload_to_vec(
+            payload_base64_original, rule_ids, modsec, paranoia_level
+        )
+        confidence_original = predict_vec(vec_original, target_model)
+        # calculate target confidence of sample (optimized)
         payload_base64 = row["data"]
         vec = payload_to_vec(payload_base64, rule_ids, modsec, paranoia_level)
-        is_attack = predict_vec(vec, target_model)
+        confidence = predict_vec(vec, target_model)
+
+        # save result
         samples_tested.loc[i] = [
             payload_base64,
-            is_attack,
+            payload_base64_original,
+            confidence,
+            confidence_original,
             row["min_confidence"],
-            is_attack < target_threshold,
+            row["original_confidence"],
+            confidence < target_threshold,
         ]
 
-    # write evaded samples to a file
-    target_workspace_dir = target_workspace.split("/")[-1]
-    transferability_dir = f"{surrogate_workspace}/transferability_{target_workspace_dir}"
-    os.makedirs(transferability_dir, exist_ok=True)
-    samples_tested.to_csv(f"{transferability_dir}/samples_tested.csv", index=False)
-
-    results = format_transferability_results(
+    save_results(
         target_workspace,
         surrogate_workspace,
         target_threshold,
         surrogate_threshold,
         samples_tested,
     )
-    with open(f"{transferability_dir}/results.txt", "w") as f:
-        f.write(results)
-    log(results, 2)
+
+    log(f"results saved to \"results/target_{target_workspace.split('/')[-1]}\"", 2)

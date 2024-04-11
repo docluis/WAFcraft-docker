@@ -218,15 +218,19 @@ def optimize(
     data_set = pd.read_csv(f"{data_path}/{tmp_dir}/todo/{file_name}")
     engine = EvasionEngine(wafamole_model)
     data_set_optimized = pd.DataFrame(
-        columns=["data", "original", "label", "min_confidence"]
+        columns=["data", "original", "label", "min_confidence", "original_confidence"]
     )
     with open(wafamole_log, "a") as f:
         for i, row in tqdm(data_set.iterrows(), total=len(data_set)):
+            original_payload = row["data"]
+            original_confidence = wafamole_model.classify(
+                base64.b64decode(original_payload).decode("utf-8")
+            )
             min_payload = None
             try:
                 with contextlib.redirect_stdout(f):
                     min_confidence, min_payload = engine.evaluate(
-                        payload=base64.b64decode(row["data"]).decode("utf-8"),
+                        payload=base64.b64decode(original_payload).decode("utf-8"),
                         **engine_settings,
                     )
                 # add to data frame with loc
@@ -235,9 +239,10 @@ def optimize(
                 )
                 data_set_optimized.loc[i] = [
                     min_payload,
-                    row["data"],
+                    original_payload,
                     row["label"],
                     min_confidence,
+                    original_confidence,
                 ]
             except Exception as e:
                 log(f"Error optimizing payload {i}: {e}")
