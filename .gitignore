@@ -7,3 +7,4 @@ wafcraft/__pycache__
 wafcraft/.ipynb_checkpoints
 wafcraft/src/__pycache__
 wafcraft/logs/*
+wafcraft/results/target_*/samples_tested
