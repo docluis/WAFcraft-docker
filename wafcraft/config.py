@@ -149,6 +149,22 @@ class Surrogate_SVM_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+class Surrogate_SVM_V2_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_SVM_V2"
+    DESCRIPTION = "surrogate model with SVM and 0% overlap"
+    # Training Settings
+    MODEL = SVC(random_state=666, probability=True)
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = SVC(random_state=666, probability=True)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
 class Surrogate_Data_V1_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V1"
@@ -210,6 +226,21 @@ class Surrogate_Data_V5_Config(Target_Config):
     NAME = "Surrogate_Data_V5"
     DESCRIPTION = "surrogate model with 100% train, test overlap"
     # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07 18-15-53 brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Paranoia_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_Paranoia_V1"
+    DESCRIPTION = "surrogate with PL 1, 100% data/test overlap"
+    # Training Settings
+    PARANOIA_LEVEL = 1
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 1,

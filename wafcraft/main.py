@@ -7,7 +7,9 @@ from config import (
     Surrogate_Data_V3_Config,
     Surrogate_Data_V4_Config,
     Surrogate_Data_V5_Config,
+    Surrogate_Paranoia_V1_Config,
     Surrogate_SVM_V1_Config,
+    Surrogate_SVM_V2_Config,
     Target_Config,
     Test_Config,
     Test_Surrogate_Overlap_V1_Config,
@@ -96,13 +98,15 @@ if __name__ == "__main__":
 
     # Set config based on the argument
     Configs = [
+        Target_Config,
         Surrogate_Data_V1_Config,
         Surrogate_Data_V2_Config,
         Surrogate_Data_V3_Config,
         Surrogate_Data_V4_Config,
         Surrogate_Data_V5_Config,
         Surrogate_SVM_V1_Config,
-        Target_Config,
+        Surrogate_SVM_V2_Config,
+        Surrogate_Paranoia_V1_Config,
         Test_Config,
         Test_Surrogate_Overlap_V1_Config,
         Test_Surrogate_SVM_V1_Config,
