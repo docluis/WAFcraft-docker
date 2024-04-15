@@ -2,12 +2,15 @@ import argparse
 import os
 
 from config import (
+    Large_Target_Config,
     Surrogate_Data_V1_Config,
     Surrogate_Data_V2_Config,
     Surrogate_Data_V3_Config,
     Surrogate_Data_V4_Config,
     Surrogate_Data_V5_Config,
     Surrogate_Paranoia_V1_Config,
+    Surrogate_Paranoia_V2_Config,
+    Surrogate_Paranoia_V3_Config,
     Surrogate_SVM_V1_Config,
     Surrogate_SVM_V2_Config,
     Target_Config,
@@ -107,9 +110,13 @@ if __name__ == "__main__":
         Surrogate_SVM_V1_Config,
         Surrogate_SVM_V2_Config,
         Surrogate_Paranoia_V1_Config,
+        Surrogate_Paranoia_V2_Config,
+        Surrogate_Paranoia_V3_Config,
         Test_Config,
         Test_Surrogate_Overlap_V1_Config,
         Test_Surrogate_SVM_V1_Config,
+        Large_Target_Config,
+        
     ]
 
     Config = None

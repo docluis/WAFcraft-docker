@@ -49,9 +49,9 @@ def generate_codename():
 
 
 def generate_workspace_path():
-    ts = datetime.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+    ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     codename = generate_codename()
-    data_path = f"data/prepared/{ts} {codename}"
+    data_path = f"data/prepared/{ts}_{codename}"
     return data_path
 
 
