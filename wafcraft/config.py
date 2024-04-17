@@ -164,7 +164,7 @@ class Large_Target_Config:
     }
     # Sample Creation Settings
     FIND_SAMPLES = False
-    SAMPLE_ATTEMPTS = 10000
+    SAMPLE_ATTEMPTS = 20000
     ENGINE_SETTINGS_SAMPLE_CREATION = {
         "max_rounds": 300,
         "round_size": 10,
@@ -192,7 +192,7 @@ class Surrogate_SVM_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
-class Large_Surrogate_SVM_V1_Config(Target_Config):
+class Large_Surrogate_SVM_V1_Config(Large_Target_Config):
     # General Settings
     NAME = "Large_Surrogate_SVM_V1"
     DESCRIPTION = "large surrogate model with SVM and 100% overlap"
@@ -238,6 +238,20 @@ class Surrogate_Data_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+class Large_Surrogate_Data_V1_Config(Large_Target_Config):
+    # General Settings
+    NAME = "Large_Surrogate_Data_V1"
+    DESCRIPTION = "large surrogate model with 0% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-15_10-04-17_turquoise-community",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
 class Surrogate_Data_V2_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V2"
@@ -275,6 +289,20 @@ class Surrogate_Data_V4_Config(Target_Config):
         "use_overlap": True,
         "overlap": 0.75,
         "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Large_Surrogate_Data_V4_Config(Large_Target_Config):
+    # General Settings
+    NAME = "Large_Surrogate_Data_V4"
+    DESCRIPTION = "large surrogate model with 75% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-15_10-04-17_turquoise-community",
     }
     # Adversarial Training Settings
     # Sample Creation Settings

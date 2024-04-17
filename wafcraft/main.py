@@ -2,6 +2,9 @@ import argparse
 import os
 
 from config import (
+    Large_Surrogate_Data_V1_Config,
+    Large_Surrogate_Data_V4_Config,
+    Large_Surrogate_SVM_V1_Config,
     Large_Target_Config,
     Surrogate_Data_V1_Config,
     Surrogate_Data_V2_Config,
@@ -116,7 +119,9 @@ if __name__ == "__main__":
         Test_Surrogate_Overlap_V1_Config,
         Test_Surrogate_SVM_V1_Config,
         Large_Target_Config,
-        
+        Large_Surrogate_SVM_V1_Config,
+        Large_Surrogate_Data_V1_Config,
+        Large_Surrogate_Data_V4_Config
     ]
 
     Config = None

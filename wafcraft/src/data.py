@@ -135,6 +135,8 @@ def add_vec(data_path_tmp, file_name, rule_ids, paranoia_level):
         index=False,
     )
 
+    os.remove(f"{data_path_tmp}/todo/{file_name}")
+
 
 def addvec_batches_in_tmp_addvec_dir(
     tmp_addvec_dir, rule_ids, paranoia_level, max_processes
@@ -252,7 +254,7 @@ def optimize(
         f"{data_path}/{tmp_dir}/optimized/{file_name}",
         index=False,
     )
-    # os.remove(f"{data_path}/{tmp_dir}/todo/{file_name}")
+    os.remove(f"{data_path}/{tmp_dir}/todo/{file_name}")
     log(f"{file_name} done!", 1)
 
 
