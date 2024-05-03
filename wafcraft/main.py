@@ -82,6 +82,12 @@ if __name__ == "__main__":
         help="Directory name of the surrogate workspace",
     )
     parser.add_argument(
+        "--samples",
+        type=int,
+        help="Number of samples to test",
+        default=-1, # -1 means all samples
+    )
+    parser.add_argument(
         "--target_use_adv",
         type=bool,
         help="Use adversarial model for target (default: True)",
@@ -161,6 +167,7 @@ if __name__ == "__main__":
             Config,
             target_workspace,
             surrogate_workspace,
+            args.samples,
             args.target_use_adv,
             args.surrogate_use_adv,
         )

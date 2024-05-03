@@ -93,6 +93,7 @@ def test_transferability(
     Target_Config,
     target_workspace,
     surrogate_workspace,
+    num_samples,
     target_use_adv=True,
     surrogate_use_adv=True,
 ):
@@ -106,6 +107,9 @@ def test_transferability(
 
     # load adversarial samples from the surrogate model
     samples = pd.read_csv(f"{surrogate_workspace}/sample_adv.csv")
+
+    if num_samples != -1:
+        samples = samples.sample(num_samples)
 
     # test the transferability
     modsec = init_modsec()
