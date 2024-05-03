@@ -51,9 +51,16 @@ def save_results(
         for line in file:
             if line.strip().startswith("DESCRIPTION:"):
                 description = line.strip().split("DESCRIPTION:", 1)[1].strip()
+    
+    config_name = ""
+    with open(f"{surrogate_workspace}/config.txt", "r") as file:
+        for line in file:
+            if line.strip().startswith("NAME:"):
+                config_name = line.strip().split("NAME:", 1)[1].strip()
 
     results = pd.DataFrame(
         {
+            "config": config_name,
             "surrogate_workspace": surrogate_workspace_dir,
             "description": description,
             "target_threshold": target_threshold,
