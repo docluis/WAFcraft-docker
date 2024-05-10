@@ -4,9 +4,9 @@ from os import listdir
 prepared_dir = "/app/wafcraft/data/prepared"
 workspace_names = listdir(prepared_dir)
 
-search_str = "NAME: Surrogate_Data_V5"
+search_str = "NoAdv_Surrogate_Data_V5"
 
-target = "target_2024-04-07_18-15-53_brown-lot"
+target = "2024-05-06_11-25-19_honeydew-tough"
 results_target_dir = "/app/wafcraft/results/" + target
 
 matching_workspaces = []
@@ -17,8 +17,11 @@ for workspace in workspace_names:
         matching_workspaces.append(workspace)
 
 # open the transferability.csv file
-with open(f"{results_target_dir}/transferability.csv", "r") as f:
-    transferability = f.read()
+try:
+    with open(f"{results_target_dir}/transferability.csv", "r") as f:
+        transferability = f.read()
+except FileNotFoundError:
+    transferability = ""
 
 # print the matching workspaces that are not in the transferability.csv file
 for workspace in matching_workspaces:

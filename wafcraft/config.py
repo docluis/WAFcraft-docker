@@ -129,6 +129,49 @@ class Target_Config:
         "threshold": 0.0,
     }
 
+class NoAdv_Target_Config:
+    # General Settings
+    NAME = "NoAdv_Target"
+    DESCRIPTION = "full data set size from paper, no adversarial training"
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 20
+    # Training Settings
+    ATTACK_DATA_PATH = "data/raw/attacks_full.sql"
+    SANE_DATA_PATH = "data/raw/sanes_full.sql"
+    TRAIN_ATTACKS_SIZE = 10000
+    TRAIN_SANES_SIZE = 10000
+    TEST_ATTACKS_SIZE = 2000
+    TEST_SANES_SIZE = 2000
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    PARANOIA_LEVEL = 4
+    RULE_IDS = get_rules_list()
+    DESIRED_FPR = 0.01
+    OVERLAP_SETTINGS = {
+        "use_overlap": False,
+        "overlap": None,
+        "overlap_path": None,
+    }
+    # Adversarial Training Settings
+    ADVERSARIAL_TRAINING = False
+    TRAIN_ADV_SIZE = 5000
+    TEST_ADV_SIZE = 2000
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    ENGINE_SETTINGS = {  # paper unclear about these settings
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 15,
+        "threshold": 0.0,  # just go as far as possible
+    }
+    # Sample Creation Settings
+    FIND_SAMPLES = False
+    SAMPLE_ATTEMPTS = 5000
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
+        "threshold": 0.0,
+    }
+
 class Large_Target_Config:
     # General Settings
     NAME = "Large_Target"
@@ -252,6 +295,19 @@ class Large_Surrogate_Data_V1_Config(Large_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+class NoAdv_Surrogate_Data_V1_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V1"
+    DESCRIPTION = "surrogate model with 0% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
 class Surrogate_Data_V2_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V2"
@@ -266,6 +322,20 @@ class Surrogate_Data_V2_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+class NoAdv_Surrogate_Data_V2_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V2"
+    DESCRIPTION = "surrogate model with 25% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.25,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
 class Surrogate_Data_V3_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V3"
@@ -275,6 +345,20 @@ class Surrogate_Data_V3_Config(Target_Config):
         "use_overlap": True,
         "overlap": 0.5,
         "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class NoAdv_Surrogate_Data_V3_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V3"
+    DESCRIPTION = "surrogate model with 50% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.5,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
     }
     # Adversarial Training Settings
     # Sample Creation Settings
@@ -308,6 +392,20 @@ class Large_Surrogate_Data_V4_Config(Large_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+class NoAdv_Surrogate_Data_V4_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V4"
+    DESCRIPTION = "surrogate model with 75% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.75,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
 class Surrogate_Data_V5_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V5"
@@ -317,6 +415,20 @@ class Surrogate_Data_V5_Config(Target_Config):
         "use_overlap": True,
         "overlap": 1,
         "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class NoAdv_Surrogate_Data_V5_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V5"
+    DESCRIPTION = "surrogate model with 100% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1.0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
     }
     # Adversarial Training Settings
     # Sample Creation Settings

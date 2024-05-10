@@ -6,6 +6,12 @@ from config import (
     Large_Surrogate_Data_V4_Config,
     Large_Surrogate_SVM_V1_Config,
     Large_Target_Config,
+    NoAdv_Surrogate_Data_V1_Config,
+    NoAdv_Surrogate_Data_V2_Config,
+    NoAdv_Surrogate_Data_V3_Config,
+    NoAdv_Surrogate_Data_V4_Config,
+    NoAdv_Surrogate_Data_V5_Config,
+    NoAdv_Target_Config,
     Surrogate_Data_V1_Config,
     Surrogate_Data_V2_Config,
     Surrogate_Data_V3_Config,
@@ -85,7 +91,7 @@ if __name__ == "__main__":
         "--samples",
         type=int,
         help="Number of samples to test",
-        default=-1, # -1 means all samples
+        default=-1,  # -1 means all samples
     )
     parser.add_argument(
         "--target_use_adv",
@@ -127,7 +133,13 @@ if __name__ == "__main__":
         Large_Target_Config,
         Large_Surrogate_SVM_V1_Config,
         Large_Surrogate_Data_V1_Config,
-        Large_Surrogate_Data_V4_Config
+        Large_Surrogate_Data_V4_Config,
+        NoAdv_Target_Config,
+        NoAdv_Surrogate_Data_V1_Config,
+        NoAdv_Surrogate_Data_V2_Config,
+        NoAdv_Surrogate_Data_V3_Config,
+        NoAdv_Surrogate_Data_V4_Config,
+        NoAdv_Surrogate_Data_V5_Config,
     ]
 
     Config = None

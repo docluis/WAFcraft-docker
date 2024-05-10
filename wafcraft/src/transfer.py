@@ -101,8 +101,8 @@ def test_transferability(
     target_workspace,
     surrogate_workspace,
     num_samples,
-    target_use_adv=True,
-    surrogate_use_adv=True,
+    target_use_adv,
+    surrogate_use_adv,
 ):
     # load models (surrogate_model, not needed)
     target_model, target_threshold = load_model_threshold(

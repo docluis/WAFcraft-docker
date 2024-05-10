@@ -139,7 +139,7 @@ def load_and_concat_batches(directory, files):
 
 
 def plot_cm(cm, path=None):
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     sns.heatmap(
         cm,
         annot=True,
@@ -160,7 +160,7 @@ def plot_cm(cm, path=None):
 
 
 def plot_roc(fpr, tpr, closest_idx, desired_fpr, path=None):
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, label="ROC curve")
     plt.ylabel("True Positive Rate (TPR)")
     plt.xlabel("False Positive Rate (FPR)")
@@ -189,7 +189,7 @@ def plot_roc(fpr, tpr, closest_idx, desired_fpr, path=None):
 def plot_precision_recall_curve(y_test, probabilities, path=None):
     precision, recall, thresholds = precision_recall_curve(y_test, probabilities)
     thresholds = np.append(thresholds, 1)
-    plt.figure(figsize=(4, 3))
+    plt.figure(figsize=(8, 6))
     plt.plot(recall, precision, marker=".", label="Precision-Recall Curve")
     plt.xlabel("Recall")
     plt.ylabel("Precision")

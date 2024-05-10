@@ -163,7 +163,9 @@ def run_model_pipeline(Config, workspace):
             )
             save_model(workspace, "model_adv", model_adv_trained, threshold_adv, True)
             log(f"[adv_model] adversarial model done", 2)
-
+    else:
+        model_adv_trained = None
+        threshold_adv = None
     # ----------------- samples -----------------
     if Config.FIND_SAMPLES:
         if not has_tmp_samples_todos:
@@ -182,6 +184,10 @@ def run_model_pipeline(Config, workspace):
             )
 
         log(f"[samples] start optimizing batches for sample creation...", 2)
+        if not model_adv_trained and model_trained:
+            log(f"[samples] using MODEL_TRAINED, not ADV_MODEL_TRAINED...", 3)
+            model_adv_trained = model_trained  # simple solution in case this model has no adversarial training
+            threshold_adv = threshold  # simple solution in case this model has no adversarial training
         _, _, samples = optimize_batches_in_todo(
             model_trained=model_adv_trained,
             engine_settings=Config.ENGINE_SETTINGS_SAMPLE_CREATION,
