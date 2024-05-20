@@ -4,9 +4,10 @@ from os import listdir
 prepared_dir = "/app/wafcraft/data/prepared"
 workspace_names = listdir(prepared_dir)
 
-search_str = "NoAdv_Surrogate_Data_V5"
+search_str = ": Surrogate_Data_V1\n"
 
-target = "2024-05-06_11-25-19_honeydew-tough"
+# target = "2024-05-06_11-25-19_honeydew-tough"
+target = "2024-04-07_18-15-53_brown-lot"
 results_target_dir = "/app/wafcraft/results/" + target
 
 matching_workspaces = []
