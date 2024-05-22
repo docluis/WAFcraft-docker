@@ -1,6 +1,9 @@
 # This file holds different Configurations
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from src.utils import get_rules_list
 
@@ -60,7 +63,7 @@ class Test_Surrogate_Overlap_V1_Config(Test_Config):
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 0,
-        "overlap_path": "/app/wafcraft/data/prepared/2024-04-11 12-24-52 violet-east",
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
     }
     # Adversarial Training Settings
     # Sample Creation Settings
@@ -73,9 +76,9 @@ class Test_Surrogate_SVM_V1_Config(Test_Config):
     # Training Settings
     MODEL = SVC(random_state=666, probability=True)
     OVERLAP_SETTINGS = {
-        "use_overlap": True,
+        "use_overlap": False,
         "overlap": 1,
-        "overlap_path": "/app/wafcraft/data/prepared/2024-04-11 12-24-52 violet-east",
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
     }
     # Adversarial Training Settings
     MODEL_ADV = SVC(random_state=666, probability=True)
@@ -264,6 +267,70 @@ class Surrogate_SVM_V2_Config(Target_Config):
     }
     # Adversarial Training Settings
     MODEL_ADV = SVC(random_state=666, probability=True)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_GBoost_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_GBoost_V1"
+    DESCRIPTION = "surrogate model with GradientBoosting and 100% overlap"
+    # Training Settings
+    MODEL = GradientBoostingClassifier(n_estimators=160, random_state=666)
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = GradientBoostingClassifier(n_estimators=160, random_state=666)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_NaiveBayes_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_NaiveBayes_V1"
+    DESCRIPTION = "surrogate model with Naive Bayes and 100% overlap"
+    # Training Settings
+    MODEL = GaussianNB()
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = GaussianNB()
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_LogReg_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_LogReg_V1"
+    DESCRIPTION = "surrogate model with Logistic Regression and 100% overlap"
+    # Training Settings
+    MODEL = LogisticRegression(random_state=666)
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = LogisticRegression(random_state=666)
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_KNN_V1_Config(Target_Config):
+    # General Settings
+    NAME = "Surrogate_KNN_V1"
+    DESCRIPTION = "surrogate model with K-Nearest Neighbors and 100% overlap"
+    # Training Settings
+    MODEL = KNeighborsClassifier()
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    MODEL_ADV = KNeighborsClassifier()
     # Sample Creation Settings
     FIND_SAMPLES = True
 
