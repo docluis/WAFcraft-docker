@@ -521,7 +521,7 @@ class Surrogate_Paranoia_V2_Config(Target_Config):
     NAME = "Surrogate_Paranoia_V2"
     DESCRIPTION = "surrogate with PL 2, 100% data/test overlap"
     # Training Settings
-    PARANOIA_LEVEL = 1
+    PARANOIA_LEVEL = 2
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 1,
@@ -536,7 +536,7 @@ class Surrogate_Paranoia_V3_Config(Target_Config):
     NAME = "Surrogate_Paranoia_V3"
     DESCRIPTION = "surrogate with PL 3, 100% data/test overlap"
     # Training Settings
-    PARANOIA_LEVEL = 1
+    PARANOIA_LEVEL = 3
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 1,

@@ -2,7 +2,7 @@
 
 # This will run transfers with workspaces after a certain timestamp
 
-from_ts="2024-05-10_15-00-00" # CHANGE THIS
+from_ts="2024-05-20_12-27-00" # CHANGE THIS
 target_workspace="2024-04-07_18-15-53_brown-lot" # CHANGE THIS
 target_config="Target" # CHANGE THIS
 
