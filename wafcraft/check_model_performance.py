@@ -1,138 +1,205 @@
-import joblib
 import pandas as pd
-from src.utils import load_data_label_vector
-from sklearn.metrics import confusion_matrix
+import numpy as np
+import joblib
+import base64
+import os
+import argparse
+
+from tqdm import tqdm
+from sklearn.metrics import confusion_matrix, roc_curve
+
+from src.model import create_wafamole_model
+from src.modsec import init_modsec
+from src.utils import load_data_label_vector, read_and_parse_sql
+
+# This script evaluates the performance of the created models.
+
+# read arguments
 
 
-def check_performance(workspace, adv, testing):
-    print()
-    print(f"Workspace: {workspace}")
-    workspace_fullpath = f"/app/wafcraft/data/prepared/{workspace}"
-    model_dir = "model_adv" if adv else "model"
-    model = joblib.load(f"{workspace_fullpath}/{model_dir}/{model_dir}.joblib")
-    threshold = float(
-        open(
-            f'{workspace_fullpath}/{model_dir}/threshold{"_adv" if adv else ""}.txt',
-            "r",
-        ).read()
-    )
-    print(f"Threshold: {threshold}")
-    print(f"Model: {model}")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--use_adv_model", action="store_true", help="Whether to use the adversarial model"
+)
+parser.add_argument(
+    "--use_adv_test",
+    action="store_true",
+    help="Whether to use the adversarial test set",
+)
+parser.add_argument("--workspace", type=str, required=True, help="Workspace directory")
 
-    my_test = load_data_label_vector(f"{workspace_fullpath}/test.csv")
-    other_test = load_data_label_vector(
-        f"/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot/test.csv"
-    )
-    other_test_adv = load_data_label_vector(
-        f"/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot/test_adv.csv"
-    )
-    my_test_adv = (
-        load_data_label_vector(f"{workspace_fullpath}/test_adv.csv") if adv else None
-    )
+args = parser.parse_args()
 
-    # drop columns that are not vector or label
-    my_test = my_test[["vector", "label"]]
-    other_test = other_test[["vector", "label"]]
-    my_test_adv = my_test_adv[["vector", "label"]] if adv else None
-    other_test_adv = other_test_adv[["vector", "label"]]
+workspace = args.workspace
 
-    if testing == "my_all":
-        test = pd.concat([my_test, my_test_adv])
-    elif testing == "my_test":
-        test = my_test
-    elif testing == "my_test-adv":
-        my_test_benign = my_test[my_test["label"] == 0]
-        test = pd.concat([my_test_adv, my_test_benign]) if adv else None
-        # test = my_test_adv
-    elif testing == "other_test":
-        test = other_test
-    elif testing == "other_test-adv":
-        other_test_benign = other_test[other_test["label"] == 0]
-        test = pd.concat([other_test_adv, other_test_benign])
-        # test = other_test_adv
-    else:
-        raise ValueError("Invalid testing option")
+use_adv_model = args.use_adv_model  # Whether to use the adversarial model
+use_adv_test = args.use_adv_test  # Whether to use the adversarial test set
 
-    print(f"Testing: {testing}")
-    print(f"Test shape: {test.shape}")
+print(
+    f"Workspace: {workspace} - Use adv model: {use_adv_model} - Use adv test: {use_adv_test}"
+)
 
-    X_test, y_test = list(test["vector"]), test["label"]
-    probabilities = model.predict_proba(X_test)[:, 1]
-    adjusted_predictions = (probabilities >= threshold).astype(int)
-    cm = confusion_matrix(y_test, adjusted_predictions)
-    return cm
+base_data = "full"  # 20k or 40k or full
+test_description = f"trained on full; test from {base_data}"
+# test_description = "fresh sampled from full data, extra shuffled"
 
-
-# pl 4, 0 overlap
-# workspaces = [
-#     "2024-04-18_14-12-51_lightblue-around",
-#     "2024-05-10_15-03-09_darkred-number",
-#     "2024-04-22_11-20-36_yellow-majority",
-#     "2024-05-10_23-07-35_beige-western",
-#     "2024-04-23_05-02-11_cadetblue-right",
-#     "2024-04-08_21-57-36_greenyellow-fear",
-#     "2024-05-11_07-05-20_honeydew-check",
-#     "2024-04-23_02-58-14_blanchedalmond-table",
-#     "2024-04-22_18-57-13_darkslateblue-air",
-#     "2024-05-11_14-57-56_darkgray-general",
-# ]
-# PL 1
-# workspaces = [
-#     "2024-06-01_19-29-44_forestgreen-history",
-#     "2024-04-12_18-12-33_crimson-clear",
-#     "2024-06-03_03-24-49_azure-tax",
-#     "2024-06-02_19-01-47_mintcream-hotel",
-#     "2024-06-01_11-41-52_royalblue-stay",
-#     "2024-06-02_03-06-38_navajowhite-fund",
-#     "2024-06-02_10-45-26_plum-early",
-# ]
-# PL 2
-# workspaces = [
-#     # "2024-06-03_21-29-45_lightslategray-feel",
-#     "2024-04-13_13-56-32_linen-generation",
-#     # "2024-06-04_10-20-22_springgreen-pattern",
-#     "2024-06-03_11-16-37_steelblue-wrong",
-#     # "2024-06-04_08-05-08_green-might",
-#     "2024-06-03_23-40-39_aquamarine-less",
-#     # "2024-06-03_19-18-06_lavender-final",
-# ]
-# PL 3
-# workspaces = [
-#     "2024-06-04_20-54-46_cadetblue-want",
-#     # "2024-06-05_13-50-21_olivedrab-marriage",
-#     # "2024-06-05_04-30-29_coral-million",
-#     "2024-06-05_06-32-02_blueviolet-rather",
-#     "2024-04-13_21-57-35_seagreen-in",
-#     "2024-06-04_12-34-40_sienna-education",
-#     "2024-06-05_15-58-09_gold-administration",
-# ]
-# new random one, no adv
-# workspaces = [
-#     "2024-06-06_16-50-23_olivedrab-wrong",
-# ]
-# svm models
-workspaces = [
-    "2024-05-20_21-11-36_linen-civil",
-    "2024-04-08_10-49-51_paleturquoise-nor",
-    "2024-05-20_12-27-17_plum-television",
-    "2024-05-21_13-37-58_mediumvioletred-worker",
-    "2024-05-21_04-59-27_peachpuff-perform",
-    "2024-05-21_21-37-36_seagreen-together",
+rule_ids = [
+    "942011",
+    "942012",
+    "942013",
+    "942014",
+    "942015",
+    "942016",
+    "942017",
+    "942018",
+    "942100",
+    "942101",
+    "942110",
+    "942120",
+    "942130",
+    "942131",
+    "942140",
+    "942150",
+    "942151",
+    "942152",
+    "942160",
+    "942170",
+    "942180",
+    "942190",
+    "942200",
+    "942210",
+    "942220",
+    "942230",
+    "942240",
+    "942250",
+    "942251",
+    "942260",
+    "942270",
+    "942280",
+    "942290",
+    "942300",
+    "942310",
+    "942320",
+    "942321",
+    "942330",
+    "942340",
+    "942350",
+    "942360",
+    "942361",
+    "942362",
+    "942370",
+    "942380",
+    "942390",
+    "942400",
+    "942410",
+    "942420",
+    "942421",
+    "942430",
+    "942431",
+    "942432",
+    "942440",
+    "942450",
+    "942460",
+    "942470",
+    "942480",
+    "942490",
+    "942500",
+    "942510",
+    "942511",
+    "942520",
+    "942521",
+    "942522",
+    "942530",
+    "942540",
+    "942550",
+    "942560",
 ]
 
 
-all_fprs = []
-all_tprs = []
+def new_test_set(workspace):
+    print("Creating new test set")
+    attacks = read_and_parse_sql(f"data/raw/attacks_{base_data}.sql")
+    attacks["label"] = 1
+    print("- attacks read")
+    sanes = read_and_parse_sql(f"data/raw/sanes_{base_data}.sql")
+    sanes["label"] = 0
+    print("- sanes read")
 
-for workspace in workspaces:
-    cm = check_performance(workspace, adv=True, testing="other_test")
-    print(f"CM: {cm}")
-    fpr = cm[0][1] / (cm[0][1] + cm[0][0])
-    tpr = cm[1][1] / (cm[1][1] + cm[1][0])
-    print(f"FPR: {fpr}")
-    print(f"TPR: {tpr}")
-    all_fprs.append(fpr)
-    all_tprs.append(tpr)
+    train = load_data_label_vector(f"/app/wafcraft/data/prepared/{workspace}/train.csv")
+    train = train.drop(columns=["vector"])
 
-print(f"Average FPR: {sum(all_fprs) / len(all_fprs)}")
-print(f"Average TPR: {sum(all_tprs) / len(all_tprs)}")
+    attacks_candidates = (
+        attacks[~attacks["data"].isin(train["data"])]
+        .sample(frac=1)
+        .reset_index(drop=True)
+    )
+    sanes_candidates = (
+        sanes[~sanes["data"].isin(train["data"])].sample(frac=1).reset_index(drop=True)
+    )
+    print("- candidates selected")
+
+    test_attacks = attacks_candidates.sample(n=2000)
+    test_sanes = sanes_candidates.sample(n=2000)
+
+    test = pd.concat([test_attacks, test_sanes]).sample(frac=1).reset_index(drop=True)
+    return test
+
+
+def load_model(use_adv_model):
+    model_type = "model_adv" if use_adv_model else "model"
+
+    workspace = "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot"
+
+    model = joblib.load(f"{workspace}/{model_type}/{model_type}.joblib")
+    return model
+
+
+def evaluate_model(wafamole_model, test):
+    preds = []
+    for i, row in tqdm(test.iterrows(), total=len(test)):
+        payload_b64 = row["data"]
+        payload = base64.b64decode(payload_b64)
+        label = row["label"]
+        confidence_is_attack = wafamole_model.classify(payload.decode("utf-8"))
+        preds.append((label, confidence_is_attack))
+    labels, confidences = zip(*preds)
+    labels = np.array(labels)
+    confidences = np.array(confidences)
+
+    desired_fpr = 0.01
+    fpr, tpr, thresholds = roc_curve(labels, confidences)
+    closest_idx = np.argmin(np.abs(fpr - desired_fpr))
+    threshold = thresholds[closest_idx]
+
+    predictions = (confidences >= threshold).astype(int)
+
+    tn, fp, fn, tp = confusion_matrix(labels, predictions).ravel()
+    tpr_actuall = tp / (tp + fn)
+    fpr_actuall = fp / (fp + tn)
+
+    return tpr_actuall, fpr_actuall
+
+
+def main():
+    print()
+    print(f"Evaluating workspace {workspace}")
+    test = new_test_set(workspace)
+    model = load_model(use_adv_model)
+    modsec = init_modsec()
+    wafamole_model = create_wafamole_model(model, modsec, rule_ids, 4)
+
+    tpr, fpr = evaluate_model(wafamole_model, test)
+    print(f"TPR: {tpr}, FPR: {fpr}")
+
+    if not os.path.exists("results/model_performance.csv"):
+        with open("results/model_performance.csv", "w") as f:
+            f.write("workspace,use_model_adv,use_test_adv,test_description,fpr,tpr\n")
+
+    with open("results/model_performance.csv", "a") as f:
+        f.write(
+            f"{workspace},{use_adv_model},{use_adv_test},{test_description},{fpr},{tpr}\n"
+        )
+
+
+if __name__ == "__main__":
+    main()

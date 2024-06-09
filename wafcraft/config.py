@@ -69,6 +69,7 @@ class Test_Surrogate_Overlap_V1_Config(Test_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Test_Surrogate_SVM_V1_Config(Test_Config):
     # General Settings
     NAME = "Test_Surrogate_SVM_V1"
@@ -132,6 +133,51 @@ class Target_Config:
         "threshold": 0.0,
     }
 
+
+class Target_V2_Config:
+    # General Settings
+    NAME = "Target_V2"
+    DESCRIPTION = "full data set size from paper, improved adversarial training"
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 20
+    # Training Settings
+    ATTACK_DATA_PATH = "data/raw/attacks_full.sql"
+    SANE_DATA_PATH = "data/raw/sanes_full.sql"
+    TRAIN_ATTACKS_SIZE = 10000
+    TRAIN_SANES_SIZE = 10000
+    TEST_ATTACKS_SIZE = 2000
+    TEST_SANES_SIZE = 2000
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    PARANOIA_LEVEL = 4
+    RULE_IDS = get_rules_list()
+    DESIRED_FPR = 0.01
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 1,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot",
+    }
+    # Adversarial Training Settings
+    ADVERSARIAL_TRAINING = True
+    TRAIN_ADV_SIZE = 5000
+    TEST_ADV_SIZE = 2000
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    ENGINE_SETTINGS = {  # paper unclear about these settings
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 15,
+        "threshold": 0.0,  # just go as far as possible
+    }
+    # Sample Creation Settings
+    FIND_SAMPLES = False
+    SAMPLE_ATTEMPTS = 10000
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
+        "threshold": 0.0,
+    }
+
+
 class NoAdv_Target_Config:
     # General Settings
     NAME = "NoAdv_Target"
@@ -174,6 +220,50 @@ class NoAdv_Target_Config:
         "timeout": 30,
         "threshold": 0.0,
     }
+
+class NoAdv40k_Target_Config:
+    # General Settings
+    NAME = "NoAdv40k_Target"
+    DESCRIPTION = "20k base data set, full data set size from paper, no adversarial training"
+    BATCH_SIZE = 10
+    MAX_PROCESSES = 20
+    # Training Settings
+    ATTACK_DATA_PATH = "data/raw/attacks_40k.sql"
+    SANE_DATA_PATH = "data/raw/sanes_40k.sql"
+    TRAIN_ATTACKS_SIZE = 10000
+    TRAIN_SANES_SIZE = 10000
+    TEST_ATTACKS_SIZE = 2000
+    TEST_SANES_SIZE = 2000
+    MODEL = RandomForestClassifier(n_estimators=160, random_state=666)
+    PARANOIA_LEVEL = 4
+    RULE_IDS = get_rules_list()
+    DESIRED_FPR = 0.01
+    OVERLAP_SETTINGS = {
+        "use_overlap": False,
+        "overlap": None,
+        "overlap_path": None,
+    }
+    # Adversarial Training Settings
+    ADVERSARIAL_TRAINING = False
+    TRAIN_ADV_SIZE = 5000
+    TEST_ADV_SIZE = 2000
+    MODEL_ADV = RandomForestClassifier(n_estimators=160, random_state=666)
+    ENGINE_SETTINGS = {  # paper unclear about these settings
+        "max_rounds": 200,
+        "round_size": 10,
+        "timeout": 15,
+        "threshold": 0.0,  # just go as far as possible
+    }
+    # Sample Creation Settings
+    FIND_SAMPLES = False
+    SAMPLE_ATTEMPTS = 5000
+    ENGINE_SETTINGS_SAMPLE_CREATION = {
+        "max_rounds": 300,
+        "round_size": 10,
+        "timeout": 30,
+        "threshold": 0.0,
+    }
+
 
 class Large_Target_Config:
     # General Settings
@@ -238,6 +328,7 @@ class Surrogate_SVM_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Large_Surrogate_SVM_V1_Config(Large_Target_Config):
     # General Settings
     NAME = "Large_Surrogate_SVM_V1"
@@ -253,6 +344,7 @@ class Large_Surrogate_SVM_V1_Config(Large_Target_Config):
     MODEL_ADV = SVC(random_state=666, probability=True)
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_SVM_V2_Config(Target_Config):
     # General Settings
@@ -270,6 +362,7 @@ class Surrogate_SVM_V2_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_GBoost_V1_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_GBoost_V1"
@@ -285,6 +378,7 @@ class Surrogate_GBoost_V1_Config(Target_Config):
     MODEL_ADV = GradientBoostingClassifier(n_estimators=160, random_state=666)
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_NaiveBayes_V1_Config(Target_Config):
     # General Settings
@@ -302,6 +396,7 @@ class Surrogate_NaiveBayes_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_LogReg_V1_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_LogReg_V1"
@@ -317,6 +412,7 @@ class Surrogate_LogReg_V1_Config(Target_Config):
     MODEL_ADV = LogisticRegression(random_state=666)
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_KNN_V1_Config(Target_Config):
     # General Settings
@@ -334,6 +430,7 @@ class Surrogate_KNN_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_Data_V1_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V1"
@@ -347,6 +444,7 @@ class Surrogate_Data_V1_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Large_Surrogate_Data_V1_Config(Large_Target_Config):
     # General Settings
@@ -362,6 +460,7 @@ class Large_Surrogate_Data_V1_Config(Large_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class NoAdv_Surrogate_Data_V1_Config(NoAdv_Target_Config):
     # General Settings
     NAME = "NoAdv_Surrogate_Data_V1"
@@ -375,6 +474,22 @@ class NoAdv_Surrogate_Data_V1_Config(NoAdv_Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
+class NoAdv_Surrogate_Data_V11_Config(NoAdv_Target_Config):
+    # General Settings
+    NAME = "NoAdv_Surrogate_Data_V11"
+    DESCRIPTION = "surrogate model with 0% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+
 class Surrogate_Data_V2_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V2"
@@ -388,6 +503,7 @@ class Surrogate_Data_V2_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class NoAdv_Surrogate_Data_V2_Config(NoAdv_Target_Config):
     # General Settings
@@ -403,6 +519,7 @@ class NoAdv_Surrogate_Data_V2_Config(NoAdv_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_Data_V3_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V3"
@@ -416,6 +533,7 @@ class Surrogate_Data_V3_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class NoAdv_Surrogate_Data_V3_Config(NoAdv_Target_Config):
     # General Settings
@@ -431,6 +549,7 @@ class NoAdv_Surrogate_Data_V3_Config(NoAdv_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_Data_V4_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Data_V4"
@@ -444,6 +563,7 @@ class Surrogate_Data_V4_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Large_Surrogate_Data_V4_Config(Large_Target_Config):
     # General Settings
@@ -459,6 +579,7 @@ class Large_Surrogate_Data_V4_Config(Large_Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class NoAdv_Surrogate_Data_V4_Config(NoAdv_Target_Config):
     # General Settings
     NAME = "NoAdv_Surrogate_Data_V4"
@@ -472,6 +593,7 @@ class NoAdv_Surrogate_Data_V4_Config(NoAdv_Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_Data_V5_Config(Target_Config):
     # General Settings
@@ -487,6 +609,7 @@ class Surrogate_Data_V5_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class NoAdv_Surrogate_Data_V5_Config(NoAdv_Target_Config):
     # General Settings
     NAME = "NoAdv_Surrogate_Data_V5"
@@ -500,6 +623,7 @@ class NoAdv_Surrogate_Data_V5_Config(NoAdv_Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_Paranoia_V1_Config(Target_Config):
     # General Settings
@@ -516,6 +640,7 @@ class Surrogate_Paranoia_V1_Config(Target_Config):
     # Sample Creation Settings
     FIND_SAMPLES = True
 
+
 class Surrogate_Paranoia_V2_Config(Target_Config):
     # General Settings
     NAME = "Surrogate_Paranoia_V2"
@@ -530,6 +655,7 @@ class Surrogate_Paranoia_V2_Config(Target_Config):
     # Adversarial Training Settings
     # Sample Creation Settings
     FIND_SAMPLES = True
+
 
 class Surrogate_Paranoia_V3_Config(Target_Config):
     # General Settings

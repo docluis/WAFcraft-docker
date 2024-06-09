@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 
 from tqdm import tqdm
-from sklearn.model_selection import train_test_split
 from wafamole.evasion import EvasionEngine  # type: ignore
 from src.modsec import init_modsec
 from src.model import create_wafamole_model, payload_to_vec
@@ -23,7 +22,7 @@ from src.utils import (
 wafamole_log = "logs/wafamole_log.txt"
 
 
-def create_overlapping_dataset(A, B, C_size, data_overlap):
+def create_overlapping_dataset(A, B, C_size, data_overlap, Z):
     shared_size = int(C_size * data_overlap)
     unique_size = C_size - shared_size
     log(f"shared_size: {shared_size}, unique_size: {unique_size}", 2)
@@ -32,10 +31,15 @@ def create_overlapping_dataset(A, B, C_size, data_overlap):
     log(f"shared: {len(shared)}", 2)
 
     unique_candidates = A[~A["data"].isin(B["data"])]
-    # remove the ones that are already in shared
+    # remove the ones that are already in shared, (actually not necessary)
     unique_candidates = unique_candidates[
         ~unique_candidates["data"].isin(shared["data"])
     ]
+    if Z is not None:
+        unique_candidates = unique_candidates[
+            ~unique_candidates["data"].isin(Z["data"])
+        ]
+
     if len(unique_candidates) < unique_size:
         # create an exception here
         raise Exception(f"unique_candidates too small!")
@@ -85,31 +89,40 @@ def prepare_batches_for_addvec(
         base_test_sanes = base_test[base_test["label"] == 0]
 
         train_attacks = create_overlapping_dataset(
-            attacks, base_train_attacks, train_attacks_size, overlap_settings["overlap"]
+            attacks,
+            base_train_attacks,
+            train_attacks_size,
+            overlap_settings["overlap"],
+            None,
         )
         train_sanes = create_overlapping_dataset(
-            sanes, base_train_sanes, train_sanes_size, overlap_settings["overlap"]
+            sanes, base_train_sanes, train_sanes_size, overlap_settings["overlap"], None
+        )
+        Z = (
+            pd.concat([train_attacks, train_sanes])
+            .sample(frac=1)
+            .reset_index(drop=True)
         )
         test_attacks = create_overlapping_dataset(
-            attacks, base_test_attacks, test_attacks_size, overlap_settings["overlap"]
+            attacks,
+            base_test_attacks,
+            test_attacks_size,
+            overlap_settings["overlap"],
+            Z,
         )
         test_sanes = create_overlapping_dataset(
-            sanes, base_test_sanes, test_sanes_size, overlap_settings["overlap"]
+            sanes, base_test_sanes, test_sanes_size, overlap_settings["overlap"], Z
         )
     else:
         log("without overlap...", 2)
-        train_attacks, test_attacks = train_test_split(
-            attacks,
-            train_size=train_attacks_size,
-            test_size=test_attacks_size,
-            stratify=attacks["label"],
-        )
-        train_sanes, test_sanes = train_test_split(
-            sanes,
-            train_size=train_sanes_size,
-            test_size=test_sanes_size,
-            stratify=sanes["label"],
-        )
+        train_attacks = attacks.sample(train_attacks_size, replace=False)
+        attacks = attacks[~attacks["data"].isin(train_attacks["data"])]
+        test_attacks = attacks.sample(test_attacks_size, replace=False)
+        
+        train_sanes = sanes.sample(train_sanes_size, replace=False)
+        sanes = sanes[~sanes["data"].isin(train_sanes["data"])]
+        test_sanes = sanes.sample(test_sanes_size, replace=False)
+
 
     train = (
         pd.concat([train_attacks, train_sanes]).sample(frac=1).reset_index(drop=True)

@@ -6,9 +6,9 @@ from os import listdir
 # Optionally, the script can filter out the workspaces that are
 # already in the transferability.csv file of the target.
 
-search_str = ": Surrogate_SVM_V1\n" # CHANGE THIS
-target = "2024-04-07_18-15-53_brown-lot" # CHANGE THIS
-filter_for_non_transfered = False # CHANGE THIS
+search_str = ": Surrogate_Data_V1\n"  # CHANGE THIS
+target = "2024-04-07_18-15-53_brown-lot"  # CHANGE THIS
+filter_for_non_transfered = False  # CHANGE THIS
 
 prepared_dir = "/app/wafcraft/data/prepared"
 workspace_names = listdir(prepared_dir)
@@ -38,3 +38,5 @@ if filter_for_non_transfered:
 else:
     for workspace in matching_workspaces:
         print(workspace)
+    # print all in one line in quotes space separated
+    print(" ".join([f'"{workspace}"' for workspace in matching_workspaces]))
