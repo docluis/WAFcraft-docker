@@ -446,6 +446,63 @@ class Surrogate_Data_V1_Config(Target_Config):
     FIND_SAMPLES = True
 
 
+class Surrogate_Data_V11_Config(Target_V2_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V11"
+    DESCRIPTION = "surrogate model with 0% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V12_Config(Target_V2_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V12"
+    DESCRIPTION = "surrogate model with 25% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.25,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V13_Config(Target_V2_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V13"
+    DESCRIPTION = "surrogate model with 50% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.5,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+class Surrogate_Data_V14_Config(Target_V2_Config):
+    # General Settings
+    NAME = "Surrogate_Data_V14"
+    DESCRIPTION = "surrogate model with 75% train, test overlap"
+    # Training Settings
+    OVERLAP_SETTINGS = {
+        "use_overlap": True,
+        "overlap": 0.75,
+        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+    }
+    # Adversarial Training Settings
+    # Sample Creation Settings
+    FIND_SAMPLES = True
+
+
 class Large_Surrogate_Data_V1_Config(Large_Target_Config):
     # General Settings
     NAME = "Large_Surrogate_Data_V1"
@@ -483,7 +540,7 @@ class NoAdv_Surrogate_Data_V11_Config(NoAdv_Target_Config):
     OVERLAP_SETTINGS = {
         "use_overlap": True,
         "overlap": 0,
-        "overlap_path": "/app/wafcraft/data/prepared/2024-06-09_20-11-04_lightslategray-them",
+        "overlap_path": "/app/wafcraft/data/prepared/2024-05-06_11-25-19_honeydew-tough",
     }
     # Adversarial Training Settings
     # Sample Creation Settings

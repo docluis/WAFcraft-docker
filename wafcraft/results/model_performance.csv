@@ -39,3 +39,6 @@ workspace,use_model_adv,use_test_adv,test_description,fpr,tpr
 2024-04-23_02-58-14_blanchedalmond-table,False,False,trained on full; test from full,0.01,0.954
 2024-04-22_18-57-13_darkslateblue-air,False,False,trained on full; test from full,0.009,0.954
 2024-05-11_14-57-56_darkgray-general,False,False,trained on full; test from full,0.01,0.964
+2024-06-09_20-11-04_lightslategray-them,False,False,trained on full; lightslategray-them non adv model; test from 40k,0.01,0.917
+2024-06-09_20-11-04_lightslategray-them,False,False,trained on full; lightslategray-them non adv model; test from full,0.0085,0.9595
+2024-06-09_20-11-04_lightslategray-them,True,False,trained on full; lightslategray-them adv model; test from 40k,0.0095,0.878

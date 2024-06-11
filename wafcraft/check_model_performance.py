@@ -39,8 +39,8 @@ print(
     f"Workspace: {workspace} - Use adv model: {use_adv_model} - Use adv test: {use_adv_test}"
 )
 
-base_data = "full"  # 20k or 40k or full
-test_description = f"trained on full; test from {base_data}"
+base_data = "40k"  # 20k or 40k or full
+test_description = f"trained on full; lightslategray-them adv model; test from {base_data}"
 # test_description = "fresh sampled from full data, extra shuffled"
 
 rule_ids = [

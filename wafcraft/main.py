@@ -14,6 +14,10 @@ from config import (
     NoAdv_Surrogate_Data_V4_Config,
     NoAdv_Surrogate_Data_V5_Config,
     NoAdv_Target_Config,
+    Surrogate_Data_V11_Config,
+    Surrogate_Data_V12_Config,
+    Surrogate_Data_V13_Config,
+    Surrogate_Data_V14_Config,
     Surrogate_Data_V1_Config,
     Surrogate_Data_V2_Config,
     Surrogate_Data_V3_Config,
@@ -100,13 +104,13 @@ if __name__ == "__main__":
         help="Number of samples to test",
         default=-1,  # -1 means all samples
     )
-    parser.add_argument( # TODO: Fix this
+    parser.add_argument(  # TODO: Fix this
         "--target_use_adv",
         type=bool,
         help="Use adversarial model for target (default: True)",
         default=True,
     )
-    parser.add_argument( # TODO: Fix this
+    parser.add_argument(  # TODO: Fix this
         "--surrogate_use_adv",
         type=bool,
         help="Use adversarial model for surrogate (only important for output) (default: True)",
@@ -154,6 +158,10 @@ if __name__ == "__main__":
         Target_V2_Config,
         NoAdv_Surrogate_Data_V11_Config,
         NoAdv40k_Target_Config,
+        Surrogate_Data_V11_Config,
+        Surrogate_Data_V12_Config,
+        Surrogate_Data_V13_Config,
+        Surrogate_Data_V14_Config,
     ]
 
     Config = None

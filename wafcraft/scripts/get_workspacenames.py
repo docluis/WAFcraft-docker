@@ -6,7 +6,7 @@ from os import listdir
 # Optionally, the script can filter out the workspaces that are
 # already in the transferability.csv file of the target.
 
-search_str = ": Surrogate_Data_V1\n"  # CHANGE THIS
+search_str = ": Surrogate_Data_V5\n"  # CHANGE THIS
 target = "2024-04-07_18-15-53_brown-lot"  # CHANGE THIS
 filter_for_non_transfered = False  # CHANGE THIS
 
@@ -39,4 +39,5 @@ else:
     for workspace in matching_workspaces:
         print(workspace)
     # print all in one line in quotes space separated
+    print()
     print(" ".join([f'"{workspace}"' for workspace in matching_workspaces]))
