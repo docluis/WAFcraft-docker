@@ -101,7 +101,7 @@ for config in target_configs:
     target_workspaces.extend(find_workspaces(config))
 print(target_workspaces)
 
-# run_transfers_nxn(surrogate_workspaces, target_workspaces)
+run_transfers_nxn(surrogate_workspaces, target_workspaces)
 # # ntfy
 message = "Transfers completed"
 os.system(
