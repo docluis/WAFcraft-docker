@@ -151,12 +151,16 @@ def run_model_pipeline(Config, workspace):
                 3,
             )
 
+            test_no_attacks = test[test["label"] == 0]
+            log(f"Training data for adv: {test_no_attacks.shape[0]}, test_adv: {test_adv.shape[0]}", 2)
+            log(f"Concat looks like this: {pd.concat([test_no_attacks, test_adv]).shape}", 2)
+
             # make adversarial model
             model_adv_trained, threshold_adv = train_model(
                 train=pd.concat([train, train_adv])
                 .sample(frac=1)
                 .reset_index(drop=True),
-                test=pd.concat([test, test_adv]).sample(frac=1).reset_index(drop=True),
+                test=pd.concat([test_no_attacks, test_adv]),
                 model=Config.MODEL_ADV,
                 desired_fpr=Config.DESIRED_FPR,
                 image_path=f"{workspace}/model_adv",

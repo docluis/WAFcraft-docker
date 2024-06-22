@@ -104,17 +104,27 @@ if __name__ == "__main__":
         help="Number of samples to test",
         default=-1,  # -1 means all samples
     )
-    parser.add_argument(  # TODO: Fix this
-        "--target_use_adv",
-        type=bool,
-        help="Use adversarial model for target (default: True)",
-        default=True,
+    # parser.add_argument(  # TODO: Fix this
+    #     "--target_use_adv",
+    #     type=bool,
+    #     help="Use adversarial model for target (default: True)",
+    #     default=True,
+    # )
+    # parser.add_argument(  # TODO: Fix this
+    #     "--surrogate_use_adv",
+    #     type=bool,
+    #     help="Use adversarial model for surrogate (only important for output) (default: True)",
+    #     default=True,
+    # )
+    parser.add_argument(
+        "--target_use_nonadv",
+        action="store_true",
+        help="Use non adversarial model for target (default: False)",
     )
-    parser.add_argument(  # TODO: Fix this
-        "--surrogate_use_adv",
-        type=bool,
-        help="Use adversarial model for surrogate (only important for output) (default: True)",
-        default=True,
+    parser.add_argument(
+        "--surrogate_use_nonadv",
+        action="store_true",
+        help="Use non adversarial model for surrogate (only important for output) (default: False)",
     )
 
     args = parser.parse_args()
@@ -197,12 +207,16 @@ if __name__ == "__main__":
         surrogate_workspace = f"/app/wafcraft/data/prepared/{args.surrogate}"
         if not os.path.exists(surrogate_workspace):
             raise ValueError(f"Workspace {surrogate_workspace} does not exist")
+        
+        target_use_adv = False if args.target_use_nonadv else True
+        surrogate_use_adv = False if args.surrogate_use_nonadv else True
+
         test_transferability(
             Config,
             target_workspace,
             surrogate_workspace,
             args.samples,
-            args.target_use_adv,
-            args.surrogate_use_adv,
+            target_use_adv,
+            surrogate_use_adv,
         )
     log("\n\n", 2)

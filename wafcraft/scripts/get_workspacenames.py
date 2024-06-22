@@ -6,8 +6,8 @@ from os import listdir
 # Optionally, the script can filter out the workspaces that are
 # already in the transferability.csv file of the target.
 
-search_str = ": Surrogate_Data_V5\n"  # CHANGE THIS
-target = "2024-04-07_18-15-53_brown-lot"  # CHANGE THIS
+search_str = ": NoAdv_Surrogate_Data_V5\n"  # CHANGE THIS
+target = "2024-06-09_20-11-04_lightslategray-them"  # CHANGE THIS
 filter_for_non_transfered = False  # CHANGE THIS
 
 prepared_dir = "/app/wafcraft/data/prepared"

@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix, roc_curve
 
 from src.model import create_wafamole_model
 from src.modsec import init_modsec
-from src.utils import load_data_label_vector, read_and_parse_sql
+from src.utils import get_rules_list, load_data_label_vector, read_and_parse_sql
 
 # This script evaluates the performance of the created models.
 
@@ -27,6 +27,10 @@ parser.add_argument(
     help="Whether to use the adversarial test set",
 )
 parser.add_argument("--workspace", type=str, required=True, help="Workspace directory")
+# base_data options are 40k or full
+parser.add_argument("--base_data", type=str, required=True, help="Base data to use for test set")
+
+parser.add_argument("--note", type=str, help="Note")
 
 args = parser.parse_args()
 
@@ -35,85 +39,91 @@ workspace = args.workspace
 use_adv_model = args.use_adv_model  # Whether to use the adversarial model
 use_adv_test = args.use_adv_test  # Whether to use the adversarial test set
 
+note = args.note
+
 print(
     f"Workspace: {workspace} - Use adv model: {use_adv_model} - Use adv test: {use_adv_test}"
 )
 
-base_data = "40k"  # 20k or 40k or full
-test_description = f"trained on full; lightslategray-them adv model; test from {base_data}"
+base_data = args.base_data
+test_description = f"{note}; test from {base_data}"
 # test_description = "fresh sampled from full data, extra shuffled"
 
-rule_ids = [
-    "942011",
-    "942012",
-    "942013",
-    "942014",
-    "942015",
-    "942016",
-    "942017",
-    "942018",
-    "942100",
-    "942101",
-    "942110",
-    "942120",
-    "942130",
-    "942131",
-    "942140",
-    "942150",
-    "942151",
-    "942152",
-    "942160",
-    "942170",
-    "942180",
-    "942190",
-    "942200",
-    "942210",
-    "942220",
-    "942230",
-    "942240",
-    "942250",
-    "942251",
-    "942260",
-    "942270",
-    "942280",
-    "942290",
-    "942300",
-    "942310",
-    "942320",
-    "942321",
-    "942330",
-    "942340",
-    "942350",
-    "942360",
-    "942361",
-    "942362",
-    "942370",
-    "942380",
-    "942390",
-    "942400",
-    "942410",
-    "942420",
-    "942421",
-    "942430",
-    "942431",
-    "942432",
-    "942440",
-    "942450",
-    "942460",
-    "942470",
-    "942480",
-    "942490",
-    "942500",
-    "942510",
-    "942511",
-    "942520",
-    "942521",
-    "942522",
-    "942530",
-    "942540",
-    "942550",
-    "942560",
-]
+rule_ids = get_rules_list()
+print(f"Rule ids: {rule_ids}")
+print(f"Rule ids len: {len(rule_ids)}")
+
+# rule_ids = [
+#     "942011",
+#     "942012",
+#     "942013",
+#     "942014",
+#     "942015",
+#     "942016",
+#     "942017",
+#     "942018",
+#     "942100",
+#     "942101",
+#     "942110",
+#     "942120",
+#     "942130",
+#     "942131",
+#     "942140",
+#     "942150",
+#     "942151",
+#     "942152",
+#     "942160",
+#     "942170",
+#     "942180",
+#     "942190",
+#     "942200",
+#     "942210",
+#     "942220",
+#     "942230",
+#     "942240",
+#     "942250",
+#     "942251",
+#     "942260",
+#     "942270",
+#     "942280",
+#     "942290",
+#     "942300",
+#     "942310",
+#     "942320",
+#     "942321",
+#     "942330",
+#     "942340",
+#     "942350",
+#     "942360",
+#     "942361",
+#     "942362",
+#     "942370",
+#     "942380",
+#     "942390",
+#     "942400",
+#     "942410",
+#     "942420",
+#     "942421",
+#     "942430",
+#     "942431",
+#     "942432",
+#     "942440",
+#     "942450",
+#     "942460",
+#     "942470",
+#     "942480",
+#     "942490",
+#     "942500",
+#     "942510",
+#     "942511",
+#     "942520",
+#     "942521",
+#     "942522",
+#     "942530",
+#     "942540",
+#     "942550",
+#     "942560",
+# ]
 
 
 def new_test_set(workspace):
@@ -145,12 +155,10 @@ def new_test_set(workspace):
     return test
 
 
-def load_model(use_adv_model):
+def load_model(use_adv_model, workspace):
     model_type = "model_adv" if use_adv_model else "model"
 
-    workspace = "/app/wafcraft/data/prepared/2024-04-07_18-15-53_brown-lot"
-
-    model = joblib.load(f"{workspace}/{model_type}/{model_type}.joblib")
+    model = joblib.load(f"/app/wafcraft/data/prepared/{workspace}/{model_type}/{model_type}.joblib")
     return model
 
 
@@ -184,7 +192,7 @@ def main():
     print()
     print(f"Evaluating workspace {workspace}")
     test = new_test_set(workspace)
-    model = load_model(use_adv_model)
+    model = load_model(use_adv_model, workspace)
     modsec = init_modsec()
     wafamole_model = create_wafamole_model(model, modsec, rule_ids, 4)
 

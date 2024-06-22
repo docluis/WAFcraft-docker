@@ -115,7 +115,8 @@ def test_transferability(
     # load adversarial samples from the surrogate model
     samples = pd.read_csv(f"{surrogate_workspace}/sample_adv.csv")
 
-    if num_samples != -1:
+    # only when more samples then num_samples
+    if num_samples != -1 and samples.shape[0] > num_samples:
         samples = samples.sample(num_samples)
 
     # test the transferability
