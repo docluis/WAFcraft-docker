@@ -41,7 +41,6 @@ read
 cd /app/wafcraft
 for i in ${!rerun_dirs[@]}; do
     echo "python main.py --data --config ${configs[$i]} --workspace ${rerun_dirs[$i]}"
-    python main.py --data --config ${configs[$i]} --workspace ${rerun_dirs[$i]} || curl -d "something went again" ntfy.sh/luis-info-buysvauy12iiq
+    python main.py --data --config ${configs[$i]} --workspace ${rerun_dirs[$i]}
 done
 
-curl -d "done rerunning!" ntfy.sh/luis-info-buysvauy12iiq

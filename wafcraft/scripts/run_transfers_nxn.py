@@ -69,7 +69,3 @@ print(workspaces)
 
 run_transfers_nxn(workspaces)
 # ntfy
-message = "Transfers completed"
-os.system(
-    f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
-)

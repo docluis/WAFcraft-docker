@@ -13,4 +13,3 @@ for workspace in ${workspaces[@]}; do
     python check_model_performance.py --workspace $workspace
 done
 
-curl -d "done with all performance checks" ntfy.sh/luis-info-buysvauy12iiq

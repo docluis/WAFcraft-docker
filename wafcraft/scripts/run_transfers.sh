@@ -33,7 +33,5 @@ read
 cd /app/wafcraft
 for i in ${!dirs[@]}; do
     echo  ${dirs[$i]} "->" $target_workspace
-    python main.py --transfer --config $target_config --target $target_workspace --surrogate ${dirs[$i]} || curl -d "something went again" ntfy.sh/luis-info-buysvauy12iiq
+    python main.py --transfer --config $target_config --target $target_workspace --surrogate ${dirs[$i]}
 done
-
-curl -d "done transfers!" ntfy.sh/luis-info-buysvauy12iiq

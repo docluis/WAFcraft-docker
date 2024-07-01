@@ -30,9 +30,8 @@ def log(message, level=1):
         print(message)
         if level >= 3:
             try:
-                os.system(
-                    f'curl -d "`hostname`: {message}" -H "Tags: hedgehog" ntfy.sh/luis-info-buysvauy12iiq -s -o /dev/null'
-                )
+                # removed ntfy
+                pass
             except Exception as e:
                 print(f"Not able to notify: {e}")
 
