@@ -62,8 +62,6 @@ def get_config_string(Config):
         config += f"{key: >20}: {value}\n"
     return config
 
-
-# TODO: improve this function
 def get_rules_list():
     # read rules from each file in the rules directory
     all_rules = []

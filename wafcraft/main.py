@@ -52,7 +52,7 @@ from src.transfer import test_transferability
 if __name__ == "__main__":
     most_recent_data_path = get_most_recent_data_path()
 
-    parser = argparse.ArgumentParser(description="Run config")  # TODO
+    parser = argparse.ArgumentParser(description="Run config")
 
     parser.add_argument(
         "--config",
@@ -104,18 +104,6 @@ if __name__ == "__main__":
         help="Number of samples to test",
         default=-1,  # -1 means all samples
     )
-    # parser.add_argument(  # TODO: Fix this
-    #     "--target_use_adv",
-    #     type=bool,
-    #     help="Use adversarial model for target (default: True)",
-    #     default=True,
-    # )
-    # parser.add_argument(  # TODO: Fix this
-    #     "--surrogate_use_adv",
-    #     type=bool,
-    #     help="Use adversarial model for surrogate (only important for output) (default: True)",
-    #     default=True,
-    # )
     parser.add_argument(
         "--target_use_nonadv",
         action="store_true",

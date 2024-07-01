@@ -1,6 +1,6 @@
-# This file is a modified version of modsecurity-cli/main.py
-# https://github.com/AvalZ/modsecurity-cli
-# TODO: proper attribution
+# This file is a modified version of the file modsecurity-cli/main.py
+# from https://github.com/AvalZ/modsecurity-cli (Last accessed: 2024-07-01)
+# It has been optimized for this specific project
 
 import base64
 from ModSecurity import ModSecurity # type: ignore
