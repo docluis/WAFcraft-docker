@@ -33,7 +33,7 @@ python main.py --verbose --rules /app/wafcraft/rules "' or 1=1 -- -"
 cd wafcraft # navigate to wafcraft directory (in Docker container)
 # example creation of Target config 
 python main.py --data --config Target --new
-# example creation of Surrogate with 0% data overlap
+# example creation of Surrogate with 0% data overlap (make sure to edit the OVERLAP_SETTINGS in wafcraft/config.py to have the right path)
 python main.py --data --config Surrogate_Data_V1 --new
 # example rerun of data creation (incase of crash or to add more samples)
 python main.py --data --config Surrogate_Data_V1 --workspace <WORKSPACE DIR>
