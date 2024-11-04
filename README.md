@@ -1,4 +1,7 @@
 # WAFcraft-docker
+
+> Find the writeup for this thesis at https://luisgeissler.de/writings/transfer_attacks_on_ml-based_wafs
+
 ### Base Setup
 ```bash
 # 1. Clone This Repo
